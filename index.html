@@ -3540,17 +3540,36 @@ function postAdminComment(pinned=false){
   const store=getCmtStore(_cmtAccountId);
   if(!store[_cmtContentId])store[_cmtContentId]=[];
   const now=new Date();
-  store[_cmtContentId].push({
+  const newMsg={
     id:'cmt_'+Date.now(),role:'admin',author:'Admin',text,
     dateISO:now.toISOString(),
     date:now.toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
     pinned:!!pinned,readByClient:false,readByAdmin:true
-  });
+  };
+  store[_cmtContentId].push(newMsg);
   saveCmtStore(_cmtAccountId,store);
   document.getElementById('cmt-input').value='';
   renderThread();
   scrollThreadToBottom();
   renderCal();
+
+  // Push to Supabase so client gets it via realtime
+  if(_sb&&_sbConnected){
+    _sb.from('smm_comments').insert({
+      id:newMsg.id,
+      account_id:_cmtAccountId,
+      content_id:_cmtContentId,
+      role:'admin',
+      author:'Admin',
+      body:newMsg.text,
+      pinned:newMsg.pinned,
+      read_by_admin:true,
+      read_by_client:false,
+      created_at:newMsg.dateISO
+    }).then(({error})=>{
+      if(error)console.warn('Comment push error:',error.message);
+    });
+  }
 }
 
 function deleteComment(commentId){
