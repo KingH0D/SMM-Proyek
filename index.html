@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit v5.1</title>
+<title>SMM Toolkit</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -2976,6 +2976,19 @@ function switchCaTab(tab,el){
   if(el){el.style.borderBottomColor='var(--g)';el.style.color='var(--g)';el.style.fontWeight='600';}
 }
 
+
+// Build client viewer link with embedded Supabase credentials
+function buildClientLink(token, anchor=''){
+  const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^\/]*$/,'/');
+  const cfg=getSbCfg();
+  let url=`${base}client-viewer.html?token=${token}`;
+  if(cfg?.url&&cfg?.key){
+    url+=`&sb_url=${encodeURIComponent(cfg.url)}&sb_key=${encodeURIComponent(cfg.key)}`;
+  }
+  if(anchor)url+=anchor;
+  return url;
+}
+
 function openClientAccess(id){
   clientAccessId=id;const a=getA(id);if(!a)return;
   if(!a.data.clientToken)a.data.clientToken=genToken();
@@ -2985,7 +2998,7 @@ function openClientAccess(id){
   const token=a.data.clientToken;
   document.getElementById('ca-token').textContent=token;
   const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^/]*$/,'/');
-  document.getElementById('ca-link').value=`${base}client-viewer.html?token=${token}`;
+  document.getElementById('ca-link').value=buildClientLink(token);
 
   // Expiry status
   const expiry=a.data.clientTokenExpiry;
@@ -4191,7 +4204,7 @@ function buildNotifMessage(accountId,contentItem,totalSiap){
   const tmpl=cfg.template||NOTIF_DEFAULT_TEMPLATE;
   const token=a.data.clientToken||'';
   const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^/]*$/,'/');
-  const link=token?`${base}client-viewer.html?token=${token}`:'(link belum dibuat)';
+  const link=token?buildClientLink(token):'(link belum dibuat)';
 
   const PL_NOTIF={edu:'Edukasi',prod:'Produk',testi:'Testimoni',bts:'Behind the Scene',promo:'Promo'};
   let dateStr='';
@@ -4365,7 +4378,7 @@ function sendForReview(accountId, calKey, itemIdx){
   if(!a.data.clientToken){a.data.clientToken=genToken();persist();}
 
   const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^/]*$/,'/');
-  const reviewLink=`${base}client-viewer.html?token=${a.data.clientToken}#review-${entry.id}`;
+  const reviewLink=buildClientLink(a.data.clientToken,'#review-'+entry.id);
 
   reviewModalData={accountId,calKey,itemIdx,entry,reviewLink};
 
