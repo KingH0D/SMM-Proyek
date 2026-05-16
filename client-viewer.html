@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Viewer — SMM Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ── BASE ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#1D9E75;--gd:#0d6b4f;--gl:#edf9f4;
+  --b:#185FA5;--bl:#eef4fc;
+  --am:#8B5E0A;--aml:#fef5e4;
+  --pu:#534AB7;--pul:#eeecfa;
+  --co:#993C1D;--col:#fdede8;
+  --tx:#18181b;--mu:#71717a;--hi:#a1a1aa;
+  --bg:#f8f8f6;--bdr:#e4e4e7;
+  --white:#ffffff;
+  --r:8px;--rl:12px;
+  --fn:'Sora',sans-serif;--mono:'DM Mono',monospace;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 12px 40px rgba(0,0,0,.06);
+}
+body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--white);border-bottom:1px solid var(--bdr);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 var(--bdr)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;background:var(--g);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2}
+.logo-text{font-size:13px;font-weight:600;color:var(--tx)}
+.logo-sub{font-size:11px;color:var(--mu);font-weight:400}
+.top-right{display:flex;align-items:center;gap:10px}
+.acct-badge{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border:1px solid var(--bdr);border-radius:20px}
+.acct-dot{width:8px;height:8px;border-radius:50%}
+.acct-name{font-size:12px;font-weight:600;color:var(--tx)}
+.acct-plat{font-size:11px;color:var(--mu)}
+.mode-badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#fef5e4;color:#8B5E0A;border:1px solid #f6d47c;letter-spacing:.03em}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:28px}
+.ph-greeting{font-size:12px;font-weight:500;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.ph-title{font-size:24px;font-weight:700;color:var(--tx);margin-bottom:6px}
+.ph-sub{font-size:14px;color:var(--mu)}
+.ph-stats{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+.ph-stat{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--white);border:1px solid var(--bdr);border-radius:20px;font-size:12px}
+.ph-stat-val{font-weight:700;color:var(--tx)}
+.ph-stat-lbl{color:var(--mu)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);margin-bottom:24px}
+.tab{padding:8px 18px;font-size:13px;font-weight:500;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab:hover{color:var(--tx)}
+.tab.active{color:var(--g);border-bottom-color:var(--g);font-weight:600}
+
+/* ── SECTION TITLES ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.section-title{font-size:13px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px}
+.section-sub{font-size:12px;color:var(--mu)}
+
+/* ── MONTH NAV ── */
+.month-nav{display:flex;align-items:center;gap:10px}
+.month-label{font-size:14px;font-weight:600;color:var(--tx)}
+.nav-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--bdr);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--mu);transition:all .12s}
+.nav-btn:hover{border-color:var(--g);color:var(--g)}
+
+/* ── CALENDAR GRID ── */
+.cal-wrap{background:var(--white);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;box-shadow:var(--shadow)}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr);background:var(--bg)}
+.cal-hc{padding:10px 0;text-align:center;font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.07em;text-transform:uppercase}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);min-height:80px;padding:6px;transition:background .1s;position:relative}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell.empty-cell{background:var(--bg);opacity:.45}
+.cal-cell.today{background:linear-gradient(135deg,#edf9f4 0%,#fff 100%)}
+.cal-cell.has-content{cursor:pointer}
+.cal-cell.has-content:hover{background:#f5faf7}
+.cal-dn{font-size:11px;font-weight:600;color:var(--mu);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.today-pip{width:5px;height:5px;border-radius:50%;background:var(--g)}
+.cal-chip{font-size:10px;padding:3px 6px;border-radius:5px;margin-top:2px;display:flex;align-items:center;gap:4px;line-height:1.3;cursor:pointer;transition:opacity .12s}
+.cal-chip:hover{opacity:.8}
+.cal-chip-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.chip-edu{background:var(--gl);color:var(--gd)}
+.chip-prod{background:var(--bl);color:var(--b)}
+.chip-testi{background:var(--aml);color:var(--am)}
+.chip-bts{background:var(--pul);color:var(--pu)}
+.chip-promo{background:var(--col);color:var(--co)}
+.cal-more{font-size:9px;color:var(--hi);margin-top:3px;padding-left:2px}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── STATUS BADGES ── */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.sbadge.ide{background:#f4f4f5;color:#71717a}
+.sbadge.draft{background:#fee2e2;color:#991b1b}
+.sbadge.siap{background:#fef9c3;color:#854d0e}
+.sbadge.tayang{background:var(--gl);color:var(--gd)}
+.sbadge.inreview{background:#eff6ff;color:#1d4ed8}
+.sbadge.revreq{background:#fff7ed;color:#c2410c}
+.sbadge.revinprog{background:#f5f3ff;color:#6d28d9}
+.sbadge.approved{background:var(--gl);color:var(--gd);font-weight:700}
+.sbadge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.vbadge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#f3e8ff;color:#6d28d9;font-family:monospace}
+
+/* ── VERSION SELECTOR ── */
+.version-selector{background:linear-gradient(135deg,#faf5ff,#ede9fe);border:1.5px solid #ddd6fe;border-radius:var(--rl);padding:12px 14px;margin-bottom:10px}
+.version-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.version-tab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #ddd6fe;background:var(--white);color:#6d28d9;transition:all .12s;font-family:monospace}
+.version-tab:hover{border-color:#6d28d9;background:#f5f3ff}
+.version-tab.active{background:#6d28d9;color:#fff;border-color:#6d28d9}
+
+/* ── TIMELINE ── */
+.timeline-section{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px;margin-bottom:12px}
+.tl-label{font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.tl-wrap{position:relative;padding-left:26px;display:flex;flex-direction:column;gap:10px}
+.tl-wrap::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:linear-gradient(to bottom,#6d28d9,#ddd6fe);border-radius:2px}
+.tl-event{position:relative}
+.tl-dot{position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:2px solid currentColor}
+.tl-bubble{padding:7px 10px;border-radius:7px;font-size:12px;line-height:1.5}
+.tl-meta{font-size:10px;color:var(--hi);margin-top:3px}
+
+/* ── CONTENT LIST ── */
+.content-list{display:flex;flex-direction:column;gap:12px}
+.content-card{background:var(--white);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s}
+.content-card:hover{box-shadow:var(--shadow-md)}
+.cc-header{padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;gap:12px}
+.cc-color-bar{width:4px;border-radius:2px;min-height:42px;flex-shrink:0}
+.cc-meta{flex:1;min-width:0}
+.cc-date{font-size:11px;color:var(--mu);margin-bottom:3px;font-weight:500}
+.cc-title{font-size:14px;font-weight:600;color:var(--tx);line-height:1.4;margin-bottom:6px}
+.cc-tags{display:flex;flex-wrap:wrap;gap:5px}
+.cc-tag{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.cc-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.cc-body{padding:14px 16px}
+.cc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cc-field label{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px}
+.cc-field p{font-size:13px;color:var(--tx);line-height:1.5}
+.cc-field p.empty{color:var(--hi);font-style:italic}
+.caption-box{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-size:12px;line-height:1.7;color:var(--tx);white-space:pre-wrap;font-family:var(--fn);max-height:120px;overflow-y:auto;margin-bottom:12px}
+.caption-box.empty-cap{color:var(--hi);font-style:italic}
+
+/* ── CHECKLIST ── */
+.checklist-wrap{margin-bottom:14px}
+.cl-label{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.cl-items-list{display:flex;flex-direction:column;gap:5px}
+.cl-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mu)}
+.cl-item.done{color:var(--tx)}
+.cl-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+.cl-item.done .cl-check{background:var(--g);border-color:var(--g)}
+.cl-item.done .cl-check::after{content:'';width:4px;height:7px;border:1.5px solid #fff;border-left:0;border-top:0;transform:rotate(45deg);margin-top:-1px}
+.cl-prog-bar{height:4px;background:var(--bdr);border-radius:2px;overflow:hidden;margin-top:8px}
+.cl-prog-fill{height:100%;background:var(--g);border-radius:2px;transition:width .4s}
+
+/* ── FEEDBACK SECTION ── */
+.feedback-section{border-top:1px solid var(--bdr);padding:12px 16px;background:#fafafa}
+.feedback-existing{margin-bottom:10px}
+.fb-item{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:var(--white);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:6px;font-size:12px}
+.fb-icon{font-size:14px;flex-shrink:0}
+.fb-body{flex:1}
+.fb-type{font-weight:600;margin-bottom:2px}
+.fb-note{color:var(--mu);line-height:1.5}
+.fb-date{font-size:10px;color:var(--hi);margin-top:2px}
+.fb-actions{display:flex;gap:7px;flex-wrap:wrap}
+.btn-approve{padding:7px 14px;background:var(--g);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fn);display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-approve:hover{background:var(--gd)}
+.btn-revisi{padding:7px 14px;background:var(--white);color:var(--am);border:1.5px solid #f6d47c;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fn);display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-revisi:hover{background:var(--aml)}
+.revisi-form{margin-top:10px;display:none}
+.revisi-form.open{display:block}
+.revisi-form textarea{width:100%;border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px;font-size:12px;font-family:var(--fn);color:var(--tx);resize:none;outline:none;line-height:1.5;transition:border-color .12s}
+.revisi-form textarea:focus{border-color:var(--g)}
+.revisi-form-acts{display:flex;gap:7px;margin-top:7px;justify-content:flex-end}
+.btn-sm{padding:6px 12px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fn);border:1px solid var(--bdr);background:var(--white);color:var(--mu);transition:all .12s}
+.btn-sm:hover{border-color:var(--g);color:var(--g)}
+.btn-sm.primary{background:var(--am);color:#fff;border-color:var(--am)}
+.btn-sm.primary:hover{background:#6b4709}
+.approved-banner{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--gl);border:1px solid rgba(29,158,117,.25);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--gd)}
+
+/* ── FILTER CONTROLS ── */
+.filter-bar{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.filter-pill{padding:5px 13px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--bdr);background:var(--white);color:var(--mu);transition:all .12s;font-weight:500}
+.filter-pill:hover{border-color:var(--g);color:var(--g)}
+.filter-pill.active{border-color:var(--g);background:var(--gl);color:var(--gd);font-weight:600}
+
+/* ── MONTH FILTER ── */
+.month-filter{display:flex;align-items:center;gap:8px}
+.month-select{padding:5px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);background:var(--white);color:var(--tx);cursor:pointer;outline:none}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 24px;color:var(--hi)}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+.empty-state h3{font-size:14px;font-weight:600;color:var(--mu);margin-bottom:4px}
+.empty-state p{font-size:13px}
+
+/* ── LOADING / ERROR STATE ── */
+.state-screen{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+.state-icon{font-size:48px;margin-bottom:16px}
+.state-title{font-size:18px;font-weight:700;margin-bottom:8px}
+.state-desc{font-size:13px;color:var(--mu);max-width:400px;line-height:1.7}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mu)}
+.legend-dot{width:8px;height:8px;border-radius:2px}
+
+/* ── PIN GATE ── */
+.pin-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.pin-card{background:var(--white);border:1px solid var(--bdr);border-radius:16px;padding:36px 32px;max-width:360px;width:100%;text-align:center;box-shadow:var(--shadow-md)}
+.pin-icon{font-size:40px;margin-bottom:16px}
+.pin-title{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:6px}
+.pin-desc{font-size:13px;color:var(--mu);margin-bottom:24px;line-height:1.6}
+.pin-input{width:100%;padding:12px;border:2px solid var(--bdr);border-radius:var(--r);font-size:20px;letter-spacing:.3em;text-align:center;font-family:var(--mono);outline:none;transition:border-color .15s;margin-bottom:8px}
+.pin-input:focus{border-color:var(--g)}
+.pin-input.error{border-color:#dc2626;animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-hint{font-size:11px;color:#dc2626;margin-bottom:16px;min-height:16px}
+.btn-pin{width:100%;padding:12px;background:var(--g);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:background .15s}
+.btn-pin:hover{background:var(--gd)}
+
+/* ── COMMENT THREAD ── */
+.cmt-section{border-top:1px solid var(--bdr);padding:14px 16px;background:#fafafa}
+.cmt-thread{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.cmt-bubble-wrap{display:flex;flex-direction:column;gap:3px}
+.cmt-bubble-wrap.admin{align-items:flex-end}
+.cmt-bubble-wrap.client-side{align-items:flex-start}
+.cmt-meta{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mu)}
+.cmt-bubble-wrap.admin .cmt-meta{flex-direction:row-reverse}
+.cmt-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.cmt-bubble{max-width:85%;padding:9px 12px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.cmt-bubble.admin{background:#f3e8ff;border:1px solid #e9d5ff;color:#5b21b6;border-radius:12px 2px 12px 12px}
+.cmt-bubble.client-side{background:var(--bl);border:1px solid #bfdbfe;color:#1e40af;border-radius:2px 12px 12px 12px}
+.cmt-bubble.pinned-bubble{border-left:3px solid #7c3aed}
+.cmt-pin-label{font-size:10px;font-weight:700;color:#7c3aed;margin-bottom:4px}
+.cmt-composer{background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--rl);padding:14px}
+.cmt-composer-label{font-size:11px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:8px}
+.cmt-composer textarea{width:100%;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:13px;font-family:var(--fn);resize:none;outline:none;line-height:1.5;transition:border-color .15s}
+.cmt-composer textarea:focus{border-color:var(--b)}
+.cmt-composer-acts{display:flex;justify-content:flex-end;gap:7px;margin-top:8px}
+.btn-send-cmt{padding:8px 18px;background:var(--b);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fn);transition:background .15s}
+.btn-send-cmt:hover{background:#1450a3}
+.cmt-empty{text-align:center;padding:20px;color:var(--hi);font-size:13px}
+.history-toggle{font-size:11px;color:var(--hi);cursor:pointer;padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:var(--white);font-family:var(--fn);transition:all .12s}
+.history-toggle:hover{border-color:var(--g);color:var(--g)}
+.history-list{margin-top:8px;padding:10px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--bdr)}
+.history-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;font-size:11px}
+.history-item+.history-item{border-top:1px solid var(--bdr)}
+
+/* ── PRINT ── */
+@media print{
+  .topbar,.filter-bar,.month-filter,.tabs,.feedback-section,.btn-approve,.btn-revisi,.history-toggle,.toast-wrap,.ph-stats,.nav-btn,.print-hide{display:none!important}
+  .main{max-width:100%;padding:12px}
+  .content-card{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+  .caption-box{max-height:none}
+}
+.print-bar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:16px;gap:8px}
+.btn-print{padding:7px 14px;background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fn);color:var(--mu);display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-print:hover{border-color:var(--g);color:var(--g)}
+
+/* ── PREVIEW GALLERY ── */
+/* Lightbox */
+
+.toast{background:var(--white);border:1px solid var(--bdr);border-radius:var(--rl);padding:10px 14px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.12);max-width:280px;animation:tin .2s ease;pointer-events:all;display:flex;align-items:center;gap:8px}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.toast.ok{border-left:3px solid var(--g)}.toast.warn{border-left:3px solid #F59E0B}
+.toast-x{cursor:pointer;color:var(--hi);font-size:15px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .topbar{padding:0 16px}
+  .main{padding:20px 12px 48px}
+  .ph-title{font-size:20px}
+  .cc-grid{grid-template-columns:1fr}
+  .cc-actions{flex-direction:row;align-items:center}
+  .acct-plat{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">SMM Toolkit</div>
+      <div class="logo-sub">Client Viewer</div>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="mode-badge">👁 READ ONLY</div>
+    <div id="cv-sync-badge" style="display:none"></div>
+    <div class="acct-badge" id="acct-badge" style="display:none">
+      <div class="acct-dot" id="acct-dot"></div>
+      <div>
+        <div class="acct-name" id="acct-name">—</div>
+        <div class="acct-plat" id="acct-plat">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="main-content">
+  <!-- populated by JS -->
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ══════════════════════════════════════
+// CONSTANTS (mirror from admin)
+// ══════════════════════════════════════
+const PL={edu:'Edukasi',prod:'Produk',testi:'Testimoni',bts:'Behind the Scene',promo:'Promo'};
+const PLC={edu:'chip-edu',prod:'chip-prod',testi:'chip-testi',bts:'chip-bts',promo:'chip-promo'};
+const STC={Ide:'ide',Draft:'draft','Siap Tayang':'siap','Sudah Tayang':'tayang','In Review':'inreview','Revision Requested':'revreq','Revision In Progress':'revinprog','Approved':'approved'};
+const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const MS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const DAYS=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+const CL_ITEMS=['Brief dan ide konten siap','Desain visual selesai','Caption sudah diapprove','Hashtag sudah disiapkan','Sudah dijadwalkan / tayang'];
+const ACCT_COLORS=['#1D9E75','#185FA5','#854F0B','#993C1D','#534AB7','#2d7d9a','#6b4226','#7c3aed'];
+const PILLAR_COLORS={edu:'#1D9E75',prod:'#185FA5',testi:'#854F0B',bts:'#534AB7',promo:'#993C1D'};
+
+// ── STATE ──
+let acctData=null;     // loaded account object
+let feedback=[];       // array of feedback objects
+let activeToken=null;
+let currentView='list';// 'list' | 'calendar'
+let filterStatus='all';
+let filterPillar='all';
+let currentMonth=new Date().getMonth();
+let currentYear=new Date().getFullYear();
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+// ══════════════════════════════════════
+// SUPABASE REAL-TIME (CLIENT VIEWER)
+// ══════════════════════════════════════
+let _cvSb=null;
+let _cvRtChannel=null;
+const SB_CFG_KEY='smm_supabase_cfg';
+
+function cvInitSupabase(){
+  if(!window.supabase)return;
+  try{
+    const cfg=JSON.parse(localStorage.getItem(SB_CFG_KEY)||'null');
+    if(!cfg?.url||!cfg?.key)return;
+    _cvSb=window.supabase.createClient(cfg.url,cfg.key);
+    cvStartRealtime();
+    updateSyncBadge('online');
+  }catch(e){console.warn('Client-viewer Supabase init:',e);}
+}
+
+function cvStartRealtime(){
+  if(!_cvSb||!acctData)return;
+  _cvRtChannel=_cvSb.channel('cv-realtime-'+acctData.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'smm_accounts',filter:`id=eq.${acctData.id}`},handleRtAccountUpdate)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'smm_comments',filter:`account_id=eq.${acctData.id}`},handleRtNewComment)
+    .subscribe();
+}
+
+function handleRtAccountUpdate(payload){
+  // Admin updated account data (new content, status changes)
+  const row=payload.new;if(!row?.data)return;
+  // Merge calendar data
+  if(row.data.calendarData){
+    if(!acctData.data)acctData.data={};
+    acctData.data.calendarData=row.data.calendarData;
+    // Re-render content list
+    renderContentList();
+    if(currentView==='calendar')renderCalendar();
+    toast('🔄 Data diperbarui oleh admin','ok');
+  }
+}
+
+function handleRtNewComment(payload){
+  const c=payload.new;if(!c||c.role!=='admin')return;
+  // Persist to localStorage
+  const store=getCmtStore();
+  if(!store[c.content_id])store[c.content_id]=[];
+  store[c.content_id].push({
+    id:c.id,role:'admin',author:c.author,text:c.body,pinned:c.pinned,
+    readByAdmin:true,readByClient:false,
+    dateISO:c.created_at,date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+  });
+  saveCmtStore(store);
+  // Refresh card
+  const wrap=document.getElementById('cmts-'+c.content_id);
+  if(wrap)wrap.innerHTML=renderCommentThreadHTML(c.content_id);
+  toast(`💬 Pesan baru dari Admin`,'ok');
+}
+
+// Also push client comment to Supabase when posted
+async function cvPushComment(contentId,commentObj){
+  if(!_cvSb)return;
+  try{
+    await _cvSb.from('smm_comments').insert({
+      id:commentObj.id,account_id:acctData.id,content_id:contentId,
+      role:'client',author:'Klien',body:commentObj.text,
+      pinned:false,read_by_admin:false,read_by_client:true,
+      created_at:commentObj.dateISO
+    });
+  }catch(e){console.warn('Comment push to Supabase:',e);}
+}
+
+// Also push feedback to Supabase when submitted
+async function cvPushFeedback(contentId,fbObj){
+  if(!_cvSb)return;
+  try{
+    await _cvSb.from('smm_feedback').insert({
+      account_id:acctData.id,content_id:contentId,content_title:fbObj.contentTitle||'',
+      type:fbObj.type,note:fbObj.note||'',is_new:true,
+      created_at:fbObj.dateISO||new Date().toISOString()
+    });
+  }catch(e){console.warn('Feedback push to Supabase:',e);}
+}
+
+// Sync badge in topbar
+function updateSyncBadge(state){
+  const badge=document.getElementById('cv-sync-badge');
+  if(!badge)return;
+  const cfg={online:{bg:'#dcfce7',c:'#166534',dot:'#22c55e',txt:'Realtime ⚡'},offline:{bg:'#f4f4f5',c:' #71717a',dot:'#a1a1aa',txt:'Offline'}};
+  const s=cfg[state]||cfg.offline;
+  badge.style.cssText=`display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${s.bg};color:${s.c}`;
+  badge.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${s.dot}"></span>${s.txt}`;
+}
+
+window.onload=()=>{
+  const params=new URLSearchParams(location.search);
+  activeToken=params.get('token');
+  if(!activeToken){showError('Token tidak ditemukan','Tambahkan <code>?token=xxxxx</code> di URL, atau minta link dari admin.');return;}
+
+  const loaded=loadFromLocalStorage(activeToken);
+  if(!loaded){
+    showError('Data tidak ditemukan',`Token <code>${activeToken}</code> tidak cocok dengan data di perangkat ini.<br><br>Pastikan kamu membuka file ini di browser yang sama dengan admin, atau minta admin untuk export file JSON dan buka dengan mode file.<br><br><button onclick="triggerJSONLoad()" style="margin-top:8px;padding:8px 16px;background:var(--g);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:var(--fn);font-size:13px;font-weight:600">📂 Load dari file JSON</button>`);
+    return;
+  }
+  renderApp();
+  // Init Supabase real-time after app renders
+  setTimeout(()=>{ cvInitSupabase(); },500);
+
+  // Handle #review-{contentId} anchor — auto-scroll & highlight
+  const hash=location.hash;
+  if(hash&&hash.startsWith('#review-')){
+    const targetId=hash.replace('#review-','');
+    setTimeout(()=>{
+      const card=document.getElementById('card-'+targetId);
+      if(card){
+        card.scrollIntoView({behavior:'smooth',block:'center'});
+        card.style.outline='3px solid var(--g)';
+        card.style.boxShadow='0 0 0 6px rgba(29,158,117,.15)';
+        setTimeout(()=>{card.style.outline='';card.style.boxShadow='';},3000);
+        // Show a toast
+        toast('👆 Konten ini menunggu review kamu!','ok');
+      }
+    },600);
+  }
+};
+
+function loadFromLocalStorage(token){
+  const keys=['smm_v51','smm_v5','smm_v4','smm_v3','smm_v2_accounts'];
+  let accounts=null;
+  for(const k of keys){
+    const raw=localStorage.getItem(k);
+    if(raw){try{accounts=JSON.parse(raw);break;}catch(e){}}
+  }
+  if(!accounts)return false;
+  const match=accounts.find(a=>a.data&&a.data.clientToken===token);
+  if(!match)return false;
+  acctData=match;
+  // Load feedback from smm_fbhist_ (same key admin reads/writes)
+  try{
+    const store=JSON.parse(localStorage.getItem('smm_fbhist_'+match.id)||'{}');
+    feedback=[];
+    Object.entries(store).forEach(([cid,hist])=>{
+      if(hist&&hist.length){
+        const latest=hist[hist.length-1];
+        feedback.push({contentId:cid,...latest});
+      }
+    });
+  }catch(e){feedback=[];}
+  return true;
+}
+
+function loadFromJSON(json){
+  try{
+    const data=typeof json==='string'?JSON.parse(json):json;
+    if(!data.token||data.token!==activeToken){toast('Token JSON tidak cocok','warn');return false;}
+    acctData={id:data.accountId,name:data.name,platform:data.platform,category:data.category||'',colorIdx:data.colorIdx||0,
+      data:{calendarData:data.calendarData||{},clientPin:data.clientPin||null,clientTokenExpiry:data.clientTokenExpiry||null}};
+    // Rebuild flat feedback[] from feedbackHistory (nested) or legacy feedback[]
+    feedback=[];
+    if(data.feedbackHistory){
+      Object.entries(data.feedbackHistory).forEach(([cid,hist])=>{
+        if(hist&&hist.length)feedback.push({contentId:cid,...hist[hist.length-1]});
+      });
+      // Also write to localStorage so live-sync works
+      localStorage.setItem('smm_fbhist_'+acctData.id,JSON.stringify(data.feedbackHistory));
+    }
+    return true;
+  }catch(e){toast('File JSON tidak valid','warn');return false;}
+}
+
+function triggerJSONLoad(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      if(loadFromJSON(ev.target.result)){renderApp();}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+// ══════════════════════════════════════
+// RENDER APP
+// ══════════════════════════════════════
+function renderApp(){
+  const a=acctData;
+  const color=ACCT_COLORS[(a.colorIdx||0)%ACCT_COLORS.length];
+
+  // Update topbar
+  document.getElementById('acct-badge').style.display='flex';
+  document.getElementById('acct-dot').style.background=color;
+  document.getElementById('acct-name').textContent=a.name;
+  document.getElementById('acct-plat').textContent=a.platform+(a.category?' · '+a.category:'');
+
+  // Flatten all calendar items
+  const allItems=getAllItems();
+  const totalItems=allItems.length;
+  const doneItems=allItems.filter(i=>i.status==='Sudah Tayang').length;
+  const readyItems=allItems.filter(i=>i.status==='Siap Tayang').length;
+  const pendingFb=allItems.filter(i=>{
+    const fb=getFeedback(i.id);return !fb||fb.type!=='approved';
+  }).length;
+
+  const wrap=document.getElementById('main-content');
+  wrap.innerHTML=`
+    <div class="page-header">
+      <div class="ph-greeting">Content Schedule</div>
+      <div class="ph-title">${a.name}</div>
+      <div class="ph-sub">${a.platform}${a.category?' · '+a.category:''} &nbsp;·&nbsp; Client Viewer Portal</div>
+      <div class="ph-stats">
+        <div class="ph-stat"><span class="ph-stat-val">${totalItems}</span><span class="ph-stat-lbl">Total Konten</span></div>
+        <div class="ph-stat"><span class="ph-stat-val" style="color:var(--g)">${doneItems}</span><span class="ph-stat-lbl">Sudah Tayang</span></div>
+        <div class="ph-stat"><span class="ph-stat-val" style="color:#185FA5">${readyItems}</span><span class="ph-stat-lbl">Siap Tayang</span></div>
+        <div class="ph-stat"><span class="ph-stat-val" style="color:#8B5E0A">${pendingFb}</span><span class="ph-stat-lbl">Menunggu Approval</span></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchView('list',this)">📋 Daftar Konten</div>
+      <div class="tab" onclick="switchView('calendar',this)">📅 Kalender</div>
+    </div>
+
+    <div id="view-list">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <div class="filter-bar" style="margin-bottom:0">
+          <span class="filter-pill active" onclick="setStatusFilter('all',this)">Semua</span>
+          <span class="filter-pill" onclick="setStatusFilter('Ide',this)">💡 Ide</span>
+          <span class="filter-pill" onclick="setStatusFilter('Draft',this)">📝 Draft</span>
+          <span class="filter-pill" onclick="setStatusFilter('Siap Tayang',this)">✅ Siap Tayang</span>
+          <span class="filter-pill" onclick="setStatusFilter('Sudah Tayang',this)">🟢 Sudah Tayang</span>
+        </div>
+        <div class="month-filter">
+          <label style="font-size:12px;color:var(--mu)">Bulan:</label>
+          <select class="month-select" id="list-month-sel" onchange="renderContentList()">
+            <option value="all">Semua Bulan</option>
+            ${MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}
+          </select>
+          <select class="month-select" id="list-year-sel" onchange="renderContentList()" style="width:72px">
+            ${[2024,2025,2026,2027].map(y=>`<option value="${y}" ${y===new Date().getFullYear()?'selected':''}>${y}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div id="content-list-wrap"></div>
+    </div>
+
+    <div id="view-calendar" style="display:none">
+      <div class="section-header">
+        <div class="month-nav">
+          <button class="nav-btn" onclick="changeCalMonth(-1)">&#8249;</button>
+          <span class="month-label" id="cal-month-label"></span>
+          <button class="nav-btn" onclick="changeCalMonth(1)">&#8250;</button>
+        </div>
+        <div class="legend">
+          ${Object.entries(PILLAR_COLORS).map(([k,c])=>`<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${PL[k]}</div>`).join('')}
+        </div>
+      </div>
+      <div id="cal-wrap-inner"></div>
+    </div>
+  `;
+
+  renderContentList();
+}
+
+// ══════════════════════════════════════
+// VIEW SWITCHING
+// ══════════════════════════════════════
+function switchView(v,el){
+  currentView=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('view-list').style.display=v==='list'?'block':'none';
+  document.getElementById('view-calendar').style.display=v==='calendar'?'block':'none';
+  if(v==='calendar')renderCalendar();
+}
+
+// ══════════════════════════════════════
+// DATA HELPERS
+// ══════════════════════════════════════
+function getAllItems(){
+  const cal=acctData.data.calendarData||{};
+  const items=[];
+  Object.entries(cal).forEach(([key,arr])=>{
+    if(!Array.isArray(arr))return;
+    const[yr,mo,d]=key.split('-');
+    arr.forEach(e=>{
+      items.push({...e,dateKey:key,day:parseInt(d),month:parseInt(mo),year:parseInt(yr),
+        dateObj:new Date(parseInt(yr),parseInt(mo),parseInt(d))});
+    });
+  });
+  items.sort((a,b)=>a.dateObj-b.dateObj);
+  return items;
+}
+
+// ── Feedback uses smm_fbhist_{accountId} — same key as admin reads ──
+// Structure: { contentId: [{type,note,date,dateISO,contentTitle,isNew},...] }
+function getFbStore(){
+  try{return JSON.parse(localStorage.getItem('smm_fbhist_'+acctData.id)||'{}');}catch(e){return {};}
+}
+function saveFbStore(store){
+  localStorage.setItem('smm_fbhist_'+acctData.id,JSON.stringify(store));
+}
+
+// Returns latest feedback entry for a contentId
+function getFeedback(contentId){
+  const store=getFbStore();
+  const hist=store[contentId]||[];
+  return hist.length?hist[hist.length-1]:null;
+}
+
+// Returns full history array for a contentId
+function getFeedbackHistory(contentId){
+  return getFbStore()[contentId]||[];
+}
+
+// Appends a new feedback entry (admin reads this in real-time)
+function saveFeedback(contentId,title,type,note){
+  const store=getFbStore();
+  if(!store[contentId])store[contentId]=[];
+  const now=new Date();
+  const dateStr=`${now.getDate()} ${MS[now.getMonth()]} ${now.getFullYear()}, ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  store[contentId].push({
+    type,note:note||'',date:dateStr,
+    dateISO:now.toISOString(),
+    contentTitle:title,
+    isNew:true   // ← admin poller detects this
+  });
+  // Also keep flat feedback[] array in sync for UI
+  const idx=feedback.findIndex(f=>f.contentId===contentId);
+  const entry={contentId,contentTitle:title,type,note:note||'',date:dateStr};
+  if(idx>=0)feedback[idx]=entry;else feedback.push(entry);
+  saveFbStore(store);
+  // Append timeline event to content in admin localStorage
+  _appendClientTimelineEvent(contentId,type,note,dateStr,now.toISOString());
+  // Push to Supabase if connected
+  cvPushFeedback(contentId,{contentTitle:title,type,note:note||'',dateISO:now.toISOString()});
+}
+
+// ══════════════════════════════════════
+// FILTER
+// ══════════════════════════════════════
+function setStatusFilter(status,el){
+  filterStatus=status;
+  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderContentList();
+}
+
+// ══════════════════════════════════════
+// CONTENT LIST VIEW
+// ══════════════════════════════════════
+function renderContentList(){
+  const wrap=document.getElementById('content-list-wrap');if(!wrap)return;
+  let items=getAllItems();
+
+  // Month/year filter
+  const monthSel=document.getElementById('list-month-sel');
+  const yearSel=document.getElementById('list-year-sel');
+  const selMonth=monthSel?monthSel.value:'all';
+  const selYear=yearSel?parseInt(yearSel.value):new Date().getFullYear();
+
+  if(selMonth!=='all'){
+    items=items.filter(i=>i.month===parseInt(selMonth)&&i.year===selYear);
+  }
+
+  // Status filter
+  if(filterStatus!=='all'){
+    items=items.filter(i=>(i.status||'Ide')===filterStatus);
+  }
+
+  if(!items.length){
+    wrap.innerHTML=`<div class="empty-state"><div class="icon">📭</div><h3>Tidak ada konten</h3><p>Tidak ada konten yang cocok dengan filter yang dipilih.</p></div>`;
+    return;
+  }
+
+  // Group by month
+  const groups={};
+  items.forEach(i=>{
+    const key=`${i.year}-${i.month}`;
+    if(!groups[key])groups[key]={label:`${MONTHS[i.month]} ${i.year}`,items:[]};
+    groups[key].items.push(i);
+  });
+
+  let html='';
+  Object.entries(groups).forEach(([,g])=>{
+    html+=`<div style="margin-bottom:28px">
+      <div style="font-size:12px;font-weight:700;color:var(--hi);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;padding-left:2px">${g.label}</div>
+      <div class="content-list">
+        ${g.items.map(item=>renderContentCard(item)).join('')}
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+
+function renderContentCard(item){
+  const sc=STC[item.status||'Ide']||'ide';
+  const pc=PLC[item.pillar]||'chip-edu';
+  const pcolor=PILLAR_COLORS[item.pillar]||'#1D9E75';
+  const cl=item.checklist||[];
+  const clDone=cl.filter(Boolean).length;
+  const clPct=Math.round(clDone/CL_ITEMS.length*100);
+  const dateStr=`${item.day} ${MS[item.month]} ${item.year}${item.time?' · '+item.time:''}`;
+  const checklistHtml=CL_ITEMS.map((label,i)=>`
+    <div class="cl-item ${cl[i]?'done':''}">
+      <div class="cl-check"></div>
+      <span>${label}</span>
+    </div>`).join('');
+
+  // Version system
+  const versions=item.versions||[];
+  const currentVIdx=_selectedVersions[item.id]!==undefined?_selectedVersions[item.id]:versions.length-1;
+  const activeVersion=versions[currentVIdx]||null;
+  const displayItem=activeVersion?{...item,...activeVersion}:item;
+  const isLatestVersion=currentVIdx===versions.length-1||versions.length===0;
+
+  const fb=getFeedback(item.id);
+  const fbHistory=getFeedbackHistory(item.id);
+  const isApproved=fb&&fb.type==='approved';
+  const hasRevision=fb&&fb.type==='revision';
+
+  // History display
+  let historyHtml='';
+  if(fbHistory.length>1){
+    const older=fbHistory.slice(0,-1).reverse();
+    historyHtml=`<div style="margin-top:8px">
+      <button class="history-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('▶')?'▼ Sembunyikan':'▶ Lihat riwayat (${older.length})'">▶ Lihat riwayat (${older.length})</button>
+      <div class="history-list" style="display:none">
+        ${older.map(h=>`<div class="history-item">
+          <span style="flex-shrink:0">${h.type==='approved'?'✅':'✏️'}</span>
+          <div><div style="font-size:11px;font-weight:600;color:${h.type==='approved'?'var(--g)':'#D97706'}">${h.type==='approved'?'Approved':'Revisi'}</div>
+          ${h.note?`<div style="color:var(--mu)">${escHtml(h.note)}</div>`:''}
+          <div style="color:var(--hi);font-size:10px">${h.date||''}</div></div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  let fbSection='';
+  if(isApproved){
+    fbSection=`<div class="approved-banner">✅ Sudah di-approve · ${fb.date||''}</div>${historyHtml}`;
+  } else {
+    const existingRevision=hasRevision?`
+      <div class="fb-item" style="margin-bottom:10px">
+        <div class="fb-icon">✏️</div>
+        <div class="fb-body">
+          <div class="fb-type" style="color:#D97706">Catatan Revisi Terakhir</div>
+          ${fb.note?`<div class="fb-note">${escHtml(fb.note)}</div>`:''}
+          <div class="fb-date">${fb.date||''}</div>
+        </div>
+      </div>${historyHtml}`:'';
+
+    fbSection=`
+      ${existingRevision}
+      <div class="fb-actions">
+        <button class="btn-approve" onclick="doApprove('${item.id}','${escAttr(item.title)}')">✅ Approve</button>
+        <button class="btn-revisi" onclick="toggleRevisiForm('form-${item.id}')">✏️ ${hasRevision?'Revisi Lagi':'Minta Revisi'}</button>
+      </div>
+      <div class="revisi-form" id="form-${item.id}">
+        <textarea id="note-${item.id}" rows="3" placeholder="Tulis catatan revisi atau permintaan perubahan..."></textarea>
+        <div class="revisi-form-acts">
+          <button class="btn-sm" onclick="toggleRevisiForm('form-${item.id}')">Batal</button>
+          <button class="btn-sm primary" onclick="doRevisi('${item.id}','${escAttr(item.title)}')">Kirim Catatan</button>
+        </div>
+      </div>`;
+  }
+
+  return `<div class="content-card" id="card-${item.id}">
+    <div class="cc-header">
+      <div class="cc-color-bar" style="background:${pcolor}"></div>
+      <div class="cc-meta">
+        <div class="cc-date">${dateStr}</div>
+        <div class="cc-title">${escHtml(item.title||'—')}</div>
+        <div class="cc-tags">
+          <span class="cc-tag ${pc}">${PL[item.pillar]||item.pillar||'—'}</span>
+          ${item.format?`<span class="cc-tag" style="background:#f4f4f5;color:var(--mu)">${item.format}</span>`:''}
+          ${item.objective?`<span class="cc-tag" style="background:#ede9fe;color:#6d28d9">${item.objective}</span>`:''}
+        </div>
+      </div>
+      <div class="cc-actions">
+        <span class="sbadge ${sc}">${item.status||'Ide'}</span>
+        ${versions.length>0?`<span class="vbadge">V${currentVIdx+1}/${versions.length}</span>`:''}
+        <span style="font-size:11px;color:${clPct===100?'var(--g)':'var(--hi)'};font-weight:600">${clPct}%</span>
+      </div>
+    </div>
+
+    ${versions.length>1?`
+    <div class="version-selector">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;font-weight:700;color:#6d28d9;letter-spacing:.06em">📦 PILIH VERSI YANG INGIN DIREVIEW</div>
+        ${!isLatestVersion?`<span style="font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px">⚠️ Bukan versi terbaru</span>`:'<span style="font-size:10px;font-weight:700;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px">✓ Versi terbaru</span>'}
+      </div>
+      <div class="version-tabs">
+        ${versions.map((v,i)=>`<div class="version-tab${i===currentVIdx?' active':''}" onclick="selectVersion('${item.id}',${i})">V${v.v} · ${v.label}</div>`).join('')}
+      </div>
+    </div>`:''}
+
+    <div class="cc-body">
+      ${!isLatestVersion?`<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--r);padding:9px 12px;margin-bottom:10px;font-size:12px;color:#9a3412">⚠️ Kamu sedang melihat <strong>V${currentVIdx+1} (${activeVersion?.label||''})</strong>, bukan versi terbaru. <a href="#" onclick="selectVersion('${escAttr(item.id)}',${versions.length-1});return false" style="color:#ea580c;font-weight:700">Lihat V${versions.length} (terbaru)</a></div>`:''}
+
+      ${renderTimelineHTML(item)}
+
+      <div class="checklist-wrap">
+        <div class="cl-label"><span>✅ Checklist Produksi</span><span>${clDone}/${CL_ITEMS.length} selesai</span></div>
+        <div class="cl-items-list">${checklistHtml}</div>
+        <div class="cl-prog-bar"><div class="cl-prog-fill" style="width:${clPct}%"></div></div>
+      </div>
+
+      ${item.brief||item.keyMessage?`<div class="cc-grid">
+        ${item.brief?`<div class="cc-field"><label>Brief Konten</label><p>${escHtml(item.brief)}</p></div>`:''}
+        ${item.keyMessage?`<div class="cc-field"><label>Key Message</label><p>${escHtml(item.keyMessage)}</p></div>`:''}
+      </div>`:''}
+
+      ${renderPreviewGalleryHTML(displayItem)}
+
+      ${(displayItem.caption)?`<div>
+        <div class="cc-field" style="margin-bottom:6px"><label>Preview Caption ${!isLatestVersion?`<span style="background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:3px">V${currentVIdx+1}</span>`:''}</label></div>
+        <div class="caption-box">${escHtml(displayItem.caption)}</div>
+      </div>`:`<div class="caption-box empty-cap">Caption belum tersedia</div>`}
+
+      ${displayItem.contentLink?`
+      <div style="background:linear-gradient(135deg,#edf9f4,#f0f7ff);border:1.5px solid rgba(29,158,117,.3);border-radius:var(--rl);padding:14px 16px;margin-bottom:4px">
+        <div style="font-size:11px;font-weight:700;color:var(--g);letter-spacing:.06em;margin-bottom:8px">🔗 HASIL KONTEN SUDAH TAYANG</div>
+        <a href="${escHtml(displayItem.contentLink)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:var(--g);color:#fff;border-radius:var(--r);font-size:13px;font-weight:700;text-decoration:none">🔗 Buka Hasil Konten</a>
+      </div>`:''}
+    </div>
+
+    <div class="feedback-section">
+      ${fbSection}
+    </div>
+
+    <div class="cmt-section" id="cmts-${item.id}">
+      ${renderCommentThreadHTML(item.id)}
+    </div>
+  </div>`;
+}
+
+// ── Version selector state ──
+const _selectedVersions={};// {contentId: versionIndex}
+function selectVersion(contentId,vIdx){
+  _selectedVersions[contentId]=vIdx;
+  // Re-render just this card
+  const allItems=getAllItems();
+  const item=allItems.find(i=>i.id===contentId);
+  if(!item)return;
+  const card=document.getElementById('card-'+contentId);
+  if(card){
+    const newCard=document.createElement('div');
+    newCard.innerHTML=renderContentCard(item);
+    card.parentNode.replaceChild(newCard.firstElementChild,card);
+  }
+}
+
+// ── Timeline HTML for client-viewer ──
+function renderTimelineHTML(item){
+  const allEvents=buildClientTimeline(item);
+  if(!allEvents.length)return '';
+  const eventCfg={
+    version: {icon:'📦',bg:'#f5f3ff',c:'#6d28d9'},
+    status:  {icon:'🔄',bg:'#eff6ff',c:'#1d4ed8'},
+    comment: {icon:'💬',bg:'#faf5ff',c:'#7c3aed'},
+    feedback:{icon:'✅',bg:'#f0fdf4',c:'#166534'},
+    revision:{icon:'✏️', bg:'#fff7ed',c:'#c2410c'},
+  };
+  const evHtml=allEvents.slice(-6).map(ev=>{// Show last 6 events
+    const cfg=eventCfg[ev.type]||eventCfg.status;
+    return `<div class="tl-event">
+      <div class="tl-dot" style="background:${cfg.bg};color:${cfg.c}">${cfg.icon}</div>
+      <div class="tl-bubble" style="background:${cfg.bg};border:1px solid ${cfg.c}22">
+        <span style="font-weight:600;color:${cfg.c};font-size:12px">${ev.actor||''}</span>
+        <span style="color:var(--tx);font-size:12px"> — ${ev.desc||''}</span>
+        ${ev.v?`<span class="vbadge" style="margin-left:6px">V${ev.v}</span>`:''}
+      </div>
+      <div class="tl-meta">${ev.date||''}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="timeline-section">
+    <div class="tl-label" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+      <span>🕐 Revision Timeline</span>
+      <span style="font-size:10px;font-weight:400">${allEvents.length} aktivitas · klik untuk ${''}</span>
+    </div>
+    <div class="tl-wrap" style="display:${allEvents.length?'flex':'none'}">${evHtml}</div>
+  </div>`;
+}
+
+function buildClientTimeline(item){
+  const events=[...(item.timeline||[])];
+  // Add feedback from localStorage
+  try{
+    const store=getCmtStore();// reuse same localStorage key
+    // Actually get fbhist from the acctData
+    const fbhist=JSON.parse(localStorage.getItem('smm_fbhist_'+acctData.id)||'{}');
+    (fbhist[item.id]||[]).forEach(f=>{
+      events.push({type:f.type==='approved'?'feedback':'revision',actor:'Klien',
+        desc:f.type==='approved'?'Klien memberikan Approval ✅':`Request Revision: "${(f.note||'').slice(0,50)}"`,
+        date:f.date||'',dateISO:f.dateISO||''});
+    });
+    // Add comments
+    const cmtStore=getCmtStore();
+    (cmtStore[item.id]||[]).forEach(m=>{
+      events.push({type:'comment',actor:m.role==='admin'?'Admin':'Kamu',
+        desc:`"${m.text.slice(0,60)}${m.text.length>60?'…':''}"`,date:m.date||'',dateISO:m.dateISO||''});
+    });
+  }catch(e){}
+  events.sort((a,b)=>new Date(a.dateISO||0)-new Date(b.dateISO||0));
+  return events;
+}
+
+// ══════════════════════════════════════
+// FEEDBACK ACTIONS
+// ══════════════════════════════════════
+function doApprove(contentId,title){
+  saveFeedback(contentId,title,'approved','');
+  toast(`✅ "${title}" approved!`,'ok');
+  // Re-render feedback section only
+  const now=new Date();
+  const dateStr=`${now.getDate()} ${MS[now.getMonth()]} ${now.getFullYear()}, ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const card=document.getElementById('card-'+contentId);
+  if(card){
+    const fbSec=card.querySelector('.feedback-section');
+    if(fbSec)fbSec.innerHTML=`<div class="approved-banner">✅ Sudah di-approve · ${dateStr}</div>`;
+  }
+}
+
+function toggleRevisiForm(formId){
+  const form=document.getElementById(formId);
+  if(!form)return;
+  form.classList.toggle('open');
+  if(form.classList.contains('open')){
+    const ta=form.querySelector('textarea');if(ta)ta.focus();
+  }
+}
+
+function doRevisi(contentId,title){
+  const note=document.getElementById('note-'+contentId)?.value.trim();
+  if(!note){toast('Tulis catatan revisi terlebih dahulu','warn');return;}
+  saveFeedback(contentId,title,'revision',note);
+  toast('✏️ Catatan revisi dikirim ke admin!','ok');
+  renderContentList();// full re-render to show history
+}
+
+// ══════════════════════════════════════
+// CALENDAR VIEW
+// ══════════════════════════════════════
+function changeCalMonth(dir){
+  currentMonth+=dir;
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  renderCalendar();
+}
+
+function renderCalendar(){
+  document.getElementById('cal-month-label').textContent=`${MONTHS[currentMonth]} ${currentYear}`;
+  const cal=acctData.data.calendarData||{};
+  const today=new Date();today.setHours(0,0,0,0);
+  const firstDay=new Date(currentYear,currentMonth,1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
+  const dim=new Date(currentYear,currentMonth+1,0).getDate();
+
+  let html=`<div class="cal-wrap">
+    <div class="cal-head">${DAYS.map(d=>`<div class="cal-hc">${d}</div>`).join('')}</div>
+    <div class="cal-grid">`;
+
+  for(let i=0;i<offset;i++){
+    html+=`<div class="cal-cell empty-cell"></div>`;
+  }
+  for(let d=1;d<=dim;d++){
+    const key=`${currentYear}-${currentMonth}-${d}`;
+    const items=(cal[key]||[]).filter(e=>Array.isArray(cal[key]));
+    const cellItems=Array.isArray(cal[key])?cal[key]:[];
+    const dt=new Date(currentYear,currentMonth,d);
+    const isToday=dt.getTime()===today.getTime();
+    html+=`<div class="cal-cell ${isToday?'today':''} ${cellItems.length>0?'has-content':''}">
+      <div class="cal-dn"><span>${d}</span>${isToday?'<span class="today-pip"></span>':''}</div>`;
+    cellItems.slice(0,2).forEach(e=>{
+      const sc=STC[e.status||'Ide']||'ide';
+      const fb=getFeedback(e.id);
+      const approved=fb&&fb.type==='approved';
+      html+=`<div class="cal-chip ${PLC[e.pillar]||'chip-edu'}" onclick="scrollToCard('${e.id}')">
+        <span class="status-dot" style="background:${approved?'var(--g)':sc==='tayang'?'var(--g)':sc==='siap'?'#185FA5':sc==='draft'?'#c2410c':'#a1a1aa'}"></span>
+        <span class="cal-chip-text">${escHtml(e.title||'Konten')}</span>
+      </div>`;
+    });
+    if(cellItems.length>2)html+=`<div class="cal-more">+${cellItems.length-2} lainnya</div>`;
+    html+=`</div>`;
+  }
+  html+=`</div></div>`;
+  document.getElementById('cal-wrap-inner').innerHTML=html;
+}
+
+function scrollToCard(contentId){
+  switchView('list',document.querySelectorAll('.tab')[0]);
+  setTimeout(()=>{
+    const card=document.getElementById('card-'+contentId);
+    if(card){card.scrollIntoView({behavior:'smooth',block:'center'});card.style.outline='2px solid var(--g)';setTimeout(()=>card.style.outline='',2000);}
+  },200);
+}
+
+// ══════════════════════════════════════
+// COMMENT THREAD ENGINE (CLIENT SIDE)
+// ══════════════════════════════════════
+function getCmtStore(){
+  try{return JSON.parse(localStorage.getItem('smm_comments_'+acctData.id)||'{}');}catch(e){return {};}
+}
+function saveCmtStore(store){
+  localStorage.setItem('smm_comments_'+acctData.id,JSON.stringify(store));
+}
+function getThread(contentId){
+  return getCmtStore()[contentId]||[];
+}
+
+function renderCommentThreadHTML(contentId){
+  const thread=getThread(contentId);
+  const pinned=thread.filter(m=>m.pinned);
+  const rest=thread.filter(m=>!m.pinned);
+  const ordered=[...pinned,...rest.filter(m=>!m.pinned)];
+  // Actually show all in order with pinned marked
+  const all=[...thread].sort((a,b)=>new Date(a.dateISO)-new Date(b.dateISO));
+
+  let threadHtml='';
+  if(!all.length){
+    threadHtml=`<div class="cmt-empty">Belum ada komentar dari admin.</div>`;
+  } else {
+    threadHtml='<div class="cmt-thread">';
+    all.forEach(m=>{
+      const isAdmin=m.role==='admin';
+      const side=isAdmin?'admin':'client-side';
+      const avatarBg=isAdmin?'#7c3aed':'#185FA5';
+      const avatarLetter=isAdmin?'A':'K';
+      threadHtml+=`<div class="cmt-bubble-wrap ${side}">
+        <div class="cmt-meta">
+          <div class="cmt-avatar" style="background:${avatarBg}">${avatarLetter}</div>
+          <span style="font-weight:600">${isAdmin?'Admin':'Kamu'}</span>
+          <span>${m.date||''}</span>
+        </div>
+        <div class="cmt-bubble ${side}${m.pinned?' pinned-bubble':''}">
+          ${m.pinned?`<div class="cmt-pin-label">📌 Pesan Penting</div>`:''}
+          ${escHtml(m.text)}
+        </div>
+      </div>`;
+    });
+    threadHtml+='</div>';
+  }
+
+  // Unread admin message count
+  const unread=thread.filter(m=>m.role==='admin'&&!m.readByClient).length;
+  const unreadBanner=unread>0?`<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:7px 12px;font-size:12px;color:#1d4ed8;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+    <span style="width:7px;height:7px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
+    ${unread} pesan baru dari admin
+  </div>`:'';
+
+  return `
+    <div style="font-size:11px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      <span>💬 DISKUSI KONTEN</span>
+      ${thread.length?`<span style="font-size:11px;font-weight:400;color:var(--hi)">${thread.length} pesan</span>`:''}
+    </div>
+    ${unreadBanner}
+    ${threadHtml}
+    <div class="cmt-composer">
+      <div class="cmt-composer-label">BALAS KE ADMIN</div>
+      <textarea id="cmt-client-input-${contentId}" rows="2" placeholder="Tulis pertanyaan, catatan, atau konfirmasi untuk admin…" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter')postClientComment('${contentId}')"></textarea>
+      <div class="cmt-composer-acts">
+        <button class="btn-sm" onclick="cancelClientComment('${contentId}')">Batal</button>
+        <button class="btn-send-cmt" onclick="postClientComment('${contentId}')">Kirim →</button>
+      </div>
+    </div>`;
+}
+
+function postClientComment(contentId){
+  const inp=document.getElementById('cmt-client-input-'+contentId);
+  const text=(inp?.value||'').trim();
+  if(!text){toast('Tulis komentar terlebih dahulu','warn');return;}
+  const store=getCmtStore();
+  if(!store[contentId])store[contentId]=[];
+  const now=new Date();
+  store[contentId].push({
+    id:'cmt_'+Date.now(),role:'client',author:'Klien',text,
+    dateISO:now.toISOString(),
+    date:now.toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
+    pinned:false,readByAdmin:false,readByClient:true
+  });
+  saveCmtStore(store);
+  // Mark all admin messages as read now
+  store[contentId]=store[contentId].map(m=>m.role==='admin'?{...m,readByClient:true}:m);
+  saveCmtStore(store);
+  if(inp)inp.value='';
+  // Push to Supabase real-time
+  cvPushComment(contentId,store[contentId][store[contentId].length-1]);
+  // Re-render just this comment section
+  const wrap=document.getElementById('cmts-'+contentId);
+  if(wrap)wrap.innerHTML=renderCommentThreadHTML(contentId);
+  toast('Komentar terkirim ke admin 💬','ok');
+}
+
+function cancelClientComment(contentId){
+  const inp=document.getElementById('cmt-client-input-'+contentId);
+  if(inp)inp.value='';
+}
+
+// Mark admin messages as read when user starts typing
+document.addEventListener('focusin',e=>{
+  const inp=e.target;
+  if(inp&&inp.id&&inp.id.startsWith('cmt-client-input-')){
+    const contentId=inp.id.replace('cmt-client-input-','');
+    const store=getCmtStore();
+    if(store[contentId]){
+      store[contentId]=store[contentId].map(m=>m.role==='admin'?{...m,readByClient:true}:m);
+      saveCmtStore(store);
+    }
+  }
+});
+
+// Write timeline event directly into admin's localStorage so it shows up in admin timeline
+function _appendClientTimelineEvent(contentId,type,note,dateStr,dateISO){
+  try{
+    const keys=['smm_v51','smm_v5','smm_v4'];
+    for(const k of keys){
+      const raw=localStorage.getItem(k);if(!raw)continue;
+      const accts=JSON.parse(raw);
+      let changed=false;
+      accts.forEach(a=>{
+        Object.values(a.data?.calendarData||{}).forEach(arr=>{
+          if(!Array.isArray(arr))return;
+          arr.forEach(e=>{
+            if(e.id===contentId){
+              if(!e.timeline)e.timeline=[];
+              const desc=type==='approved'?'Klien memberikan Approval ✅':`Klien Request Revision: "${(note||'').slice(0,60)}"`;
+              e.timeline.push({type:type==='approved'?'feedback':'revision',actor:'Klien',desc,date:dateStr,dateISO,feedbackType:type});
+              if(type==='approved'&&e.status==='In Review')e.status='Approved';
+              if(type==='revision'&&e.status==='In Review')e.status='Revision Requested';
+              changed=true;
+            }
+          });
+        });
+      });
+      if(changed){localStorage.setItem(k,JSON.stringify(accts));break;}
+    }
+  }catch(err){console.warn('Timeline append failed:',err);}
+}
+
+// ══════════════════════════════════════
+// PREVIEW ASSET CARDS (link-based, no image embed)
+// ══════════════════════════════════════
+const PLAT_MAP=[
+  {r:/drive\.google\.com/,   icon:'📁', name:'Google Drive'},
+  {r:/docs\.google\.com/,    icon:'📄', name:'Google Docs'},
+  {r:/canva\.com/,           icon:'🎨', name:'Canva'},
+  {r:/figma\.com/,           icon:'✏️',  name:'Figma'},
+  {r:/dropbox\.com/,         icon:'📦', name:'Dropbox'},
+  {r:/notion\.so/,           icon:'📝', name:'Notion'},
+  {r:/adobe\.com/,           icon:'🅰️',  name:'Adobe'},
+  {r:/instagram\.com/,       icon:'📸', name:'Instagram'},
+  {r:/tiktok\.com/,          icon:'🎵', name:'TikTok'},
+  {r:/youtube\.com|youtu\.be/,icon:'▶️', name:'YouTube'},
+  {r:/\.(jpg|jpeg|png|gif|webp)/i, icon:'🖼️', name:'Gambar'},
+];
+function getPlatform(url){
+  for(const p of PLAT_MAP)if(p.r.test(url))return p;
+  return{icon:'🔗',name:'Link'};
+}
+
+function renderPreviewGalleryHTML(item){
+  // Use previewAssets (new) or fall back to nothing — never embed images
+  const assets=item.previewAssets||[];
+  const note=item.previewNote||'';
+  if(!assets.length&&!note)return '';
+  const isSiap=item.status==='Siap Tayang';
+
+  const cards=assets.map(a=>{
+    const p=getPlatform(a.url);
+    const label=a.label||p.name;
+    return `<a href="${escHtml(a.url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1.5px solid #e9d5ff;border-radius:10px;text-decoration:none;transition:all .15s;cursor:pointer" onmouseover="this.style.borderColor='#7c3aed';this.style.boxShadow='0 2px 12px rgba(124,58,237,.15)'" onmouseout="this.style.borderColor='#e9d5ff';this.style.boxShadow=''">
+      <span style="font-size:22px;flex-shrink:0">${p.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#5b21b6">${escHtml(label)}</div>
+        <div style="font-size:10px;color:#a78bfa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.url.replace(/^https?:\/\//,''))}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#7c3aed;color:#fff;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0">
+        Buka
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 0 2 2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </div>
+    </a>`;
+  }).join('');
+
+  return `<div style="background:linear-gradient(135deg,#faf5ff,#fdf4ff);border:1.5px solid #e9d5ff;border-radius:12px;padding:16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"/><polyline points="15 2 15 7 20 7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      File Preview untuk Review
+      <span style="margin-left:4px;padding:2px 8px;border-radius:10px;font-size:10px;background:${isSiap?'#dbeafe':'#dcfce7'};color:${isSiap?'#1d4ed8':'#15803d'}">${isSiap?'⏳ Menunggu Review':'✅ Sudah Tayang'}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px">${cards}</div>
+    ${note?`<div style="margin-top:10px;padding:10px 14px;background:rgba(124,58,237,.06);border-left:3px solid #7c3aed;border-radius:0 8px 8px 0;font-size:12px;color:#5b21b6;line-height:1.6"><strong>💬 Catatan Admin:</strong><br>${escHtml(note)}</div>`:''}
+    <div style="margin-top:8px;font-size:10px;color:#c4b5fd">Klik tombol "Buka" untuk membuka file di tab baru</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function escHtml(str){if(!str)return '';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(str){if(!str)return '';return String(str).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
+function showError(title,desc){
+  document.getElementById('main-content').innerHTML=`
+    <div class="state-screen">
+      <div class="state-icon">🔒</div>
+      <div class="state-title">${title}</div>
+      <div class="state-desc">${desc}</div>
+    </div>`;
+}
+
+function toast(msg,type='ok'){
+  const wrap=document.getElementById('toast-wrap');
+  const t=document.createElement('div');t.className=`toast ${type}`;
+  t.innerHTML=`<div style="flex:1">${msg}</div><div class="toast-x" onclick="this.parentElement.remove()">×</div>`;
+  wrap.appendChild(t);setTimeout(()=>{if(t.parentElement)t.remove();},3000);
+}
+</script>
+</body>
+</html>
