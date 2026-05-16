@@ -488,8 +488,8 @@ function cvStartRealtime(){
       console.log('CV Realtime:', status);
       if(status==='SUBSCRIBED'){
         updateSyncBadge('online');
+        startCommentPolling(); // start polling as backup
       } else if(status==='CHANNEL_ERROR'){
-        // Auto retry
         setTimeout(()=>{
           if(_cvRtChannel)_cvSb.removeChannel(_cvRtChannel);
           _cvRtChannel=null;
@@ -497,6 +497,49 @@ function cvStartRealtime(){
         },3000);
       }
     });
+}
+
+// Polling fallback — pull latest comments every 5s from Supabase
+let _pollInterval=null;
+function startCommentPolling(){
+  if(_pollInterval)clearInterval(_pollInterval);
+  _pollInterval=setInterval(async()=>{
+    if(!_cvSb||!acctData)return;
+    try{
+      const{data}=await _cvSb
+        .from('smm_comments')
+        .select('*')
+        .eq('account_id',acctData.id)
+        .eq('role','admin')
+        .order('created_at',{ascending:false})
+        .limit(20);
+
+      if(!data||!data.length)return;
+      const store=getCmtStore();
+      let hasNew=false;
+
+      data.forEach(c=>{
+        if(!store[c.content_id])store[c.content_id]=[];
+        if(!store[c.content_id].find(m=>m.id===c.id)){
+          store[c.content_id].push({
+            id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
+            pinned:c.pinned||false,readByAdmin:true,readByClient:false,
+            dateISO:c.created_at,
+            date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+          });
+          hasNew=true;
+          // Re-render this content's comment section
+          const wrap=document.getElementById('cmts-'+c.content_id);
+          if(wrap)wrap.innerHTML=renderCommentThreadHTML(c.content_id);
+        }
+      });
+
+      if(hasNew){
+        saveCmtStore(store);
+        toast('💬 Pesan baru dari Admin','ok');
+      }
+    }catch(e){}
+  },5000);
 }
 
 function handleRtAccountUpdate(payload){
