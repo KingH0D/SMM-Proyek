@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit</title>
+<title>SMM Toolkit v5.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -1561,8 +1561,8 @@ async function testSupabaseConn(silent=false){
     if(!silent)toast('✅ Terhubung ke Supabase!','ok');
     startRealtime();
     updateSyncModal();
-    // Auto-pull on first connect to get latest data
-    if(silent)pullFromSupabase();
+    // Auto-pull only on silent init (first connect from saved config)
+    if(silent)setTimeout(()=>pullFromSupabase(),1000);
   }catch(e){
     _sbConnected=false;setSyncState('error');
     if(!silent)toast('Koneksi gagal: '+e.message,'warn');
@@ -1694,7 +1694,8 @@ async function pullFromSupabase(){
       if(existing){Object.assign(existing,merged);}
       else{accounts.push(merged);}
     });
-    persist();
+    // Write to localStorage directly (not persist() to avoid triggering push)
+    localStorage.setItem('smm_v51',JSON.stringify(accounts));
 
     // Pull comments
     const{data:cmts}=await _sb.from('smm_comments').select('*');
@@ -1772,8 +1773,7 @@ function startRealtime(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'smm_comments'},handleRtComment)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'smm_feedback'},handleRtFeedback)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'smm_accounts'},payload=>{
-      // Another device updated accounts — pull latest
-      pullFromSupabase();
+      // Skip — handled by debounced push, pulling would cause loop
     })
     .subscribe(status=>{
       console.log('Realtime status:', status);
@@ -1869,8 +1869,6 @@ function loadData(){
     if(a.colorIdx===undefined)a.colorIdx=accounts.indexOf(a);
   });
   renderRail();renderDashboard();updateRemBadge();
-  // Auto-pull from Supabase if connected
-  if(_sbConnected&&_sb)setTimeout(()=>pullFromSupabase(),500);
 }
 
 // ══════════════════════════════════════
