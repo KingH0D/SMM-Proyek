@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit</title>
+<title>SMM Toolkit v5.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -1002,16 +1002,22 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
   <!-- TAB: LINK -->
   <div id="ca-tab-link">
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--hi);margin-bottom:6px;letter-spacing:.06em">LINK CLIENT VIEWER</div>
+      <div style="font-size:11px;font-weight:600;color:var(--hi);margin-bottom:6px;letter-spacing:.06em">🌐 LINK CLIENT VIEWER (satu link untuk semua klien)</div>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" id="ca-link" readonly style="flex:1;font-size:11px;font-family:monospace;background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:7px 10px;color:var(--tx)">
-        <button class="btn bg bsm" onclick="copyClientLink()">Salin</button>
+        <button class="btn bg bsm" onclick="copyClientLink()">Salin URL</button>
       </div>
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--hi)">Token:</span>
-        <code id="ca-token" style="font-size:11px;color:var(--mu);background:#fff;border:1px solid var(--bdr);border-radius:4px;padding:2px 7px"></code>
-        <span id="ca-expiry-status" style="font-size:11px;margin-left:4px"></span>
-        <button class="btn bsm" onclick="regenToken()" style="margin-left:auto;font-size:11px">🔄 Regenerate</button>
+      <div style="margin-top:12px;background:#fff;border:2px solid var(--g);border-radius:var(--r);padding:10px 14px">
+        <div style="font-size:11px;font-weight:700;color:var(--gd);margin-bottom:6px;letter-spacing:.05em">🔑 TOKEN KLIEN INI (berikan ke klien secara terpisah)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <code id="ca-token" style="flex:1;font-size:16px;font-weight:700;color:var(--g);background:var(--gl);border-radius:var(--r);padding:8px 12px;letter-spacing:.08em;font-family:monospace;text-align:center"></code>
+          <button class="btn bg bsm" onclick="copyToken()" style="white-space:nowrap">Salin Token</button>
+        </div>
+        <div style="font-size:11px;color:var(--gd);margin-top:6px">Kirim token ini ke klien via WA/email. Klien buka URL di atas → masukkan token ini.</div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <span id="ca-expiry-status" style="font-size:11px;flex:1"></span>
+        <button class="btn bsm" onclick="regenToken()" style="font-size:11px">🔄 Regenerate Token</button>
       </div>
     </div>
     <div style="background:var(--gl);border:1px solid rgba(29,158,117,.2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px">
@@ -1555,6 +1561,8 @@ async function testSupabaseConn(silent=false){
     if(!silent)toast('✅ Terhubung ke Supabase!','ok');
     startRealtime();
     updateSyncModal();
+    // Auto-pull on first connect to get latest data
+    if(silent)pullFromSupabase();
   }catch(e){
     _sbConnected=false;setSyncState('error');
     if(!silent)toast('Koneksi gagal: '+e.message,'warn');
@@ -1725,7 +1733,7 @@ async function pullFromSupabase(){
   }catch(e){setSyncState('error');toast('Pull gagal: '+e.message,'warn');}
 }
 
-// ── Auto-push on persist ──
+// ── Auto-push on persist (accounts only — fast) ──
 const _origPersist=()=>localStorage.setItem('smm_v51',JSON.stringify(accounts));
 function persist(){
   _origPersist();
@@ -1734,7 +1742,24 @@ function persist(){
 let _pushTimer=null;
 function _debouncedPush(){
   clearTimeout(_pushTimer);
-  _pushTimer=setTimeout(()=>pushToSupabase(),1500);
+  _pushTimer=setTimeout(async()=>{
+    if(!_sb||!_sbConnected)return;
+    try{
+      const rows=accounts.map(a=>({
+        id:a.id,name:a.name,platform:a.platform||'',category:a.category||'',
+        color_idx:a.colorIdx||0,data:a.data||{}
+      }));
+      await _sb.from('smm_accounts').upsert(rows,{onConflict:'id'});
+      localStorage.setItem('smm_last_sync',new Date().toISOString());
+      setSyncState('online');
+      if(document.getElementById('sync-last-time')){
+        document.getElementById('sync-last-time').textContent='Terakhir sync: '+new Date().toLocaleString('id-ID');
+      }
+    }catch(e){
+      console.warn('Auto-push error:',e);
+      setSyncState('error');
+    }
+  },800);
 }
 
 // ── Real-time subscriptions ──
@@ -1819,7 +1844,6 @@ function handleRtFeedback(payload){
 // ══════════════════════════════════════
 // STORAGE & MIGRATION
 // ══════════════════════════════════════
-function persist(){localStorage.setItem('smm_v51',JSON.stringify(accounts));}
 function migrateCalData(cal){
   const result={};
   Object.entries(cal||{}).forEach(([key,val])=>{
@@ -1845,6 +1869,8 @@ function loadData(){
     if(a.colorIdx===undefined)a.colorIdx=accounts.indexOf(a);
   });
   renderRail();renderDashboard();updateRemBadge();
+  // Auto-pull from Supabase if connected
+  if(_sbConnected&&_sb)setTimeout(()=>pullFromSupabase(),500);
 }
 
 // ══════════════════════════════════════
@@ -2992,15 +3018,32 @@ function switchCaTab(tab,el){
 }
 
 
-// Build client viewer link with embedded Supabase credentials
+// Build client viewer link — token is separate, credentials embedded
 function buildClientLink(token, anchor=''){
   const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^\/]*$/,'/');
   const cfg=getSbCfg();
-  let url=`${base}client-viewer.html?token=${token}`;
+  // Base viewer URL (no token — client types it in)
+  let viewerBase=`${base}client-viewer.html`;
+  // If Supabase configured, embed credentials so client auto-connects
   if(cfg?.url&&cfg?.key){
-    url+=`&sb_url=${encodeURIComponent(cfg.url)}&sb_key=${encodeURIComponent(cfg.key)}`;
+    viewerBase+=`?sb_url=${encodeURIComponent(cfg.url)}&sb_key=${encodeURIComponent(cfg.key)}`;
+    if(anchor)viewerBase+=anchor;
+  } else {
+    // Fallback: embed token in URL (old behavior)
+    viewerBase+=`?token=${token}`;
+    if(anchor)viewerBase+=anchor;
   }
-  if(anchor)url+=anchor;
+  return viewerBase;
+}
+
+// Get just the viewer base URL (without token — for sharing)
+function getViewerBaseUrl(){
+  const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^\/]*$/,'/');
+  const cfg=getSbCfg();
+  let url=`${base}client-viewer.html`;
+  if(cfg?.url&&cfg?.key){
+    url+=`?sb_url=${encodeURIComponent(cfg.url)}&sb_key=${encodeURIComponent(cfg.key)}`;
+  }
   return url;
 }
 
@@ -3013,7 +3056,7 @@ function openClientAccess(id){
   const token=a.data.clientToken;
   document.getElementById('ca-token').textContent=token;
   const base=location.href.includes('index.html')?location.href.replace('index.html',''):location.href.replace(/\/[^/]*$/,'/');
-  document.getElementById('ca-link').value=buildClientLink(token);
+  document.getElementById('ca-link').value=getViewerBaseUrl();
 
   // Expiry status
   const expiry=a.data.clientTokenExpiry;
@@ -3047,6 +3090,13 @@ function openClientAccess(id){
 
   // Mark all as seen
   setTimeout(()=>markFbSeen(a.id),2000);
+}
+
+function copyToken(){
+  const token=document.getElementById('ca-token').textContent;
+  navigator.clipboard.writeText(token).then(()=>toast('Token disalin! Kirim ke klien 🔑','ok')).catch(()=>{
+    const el=document.createElement('textarea');el.value=token;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);toast('Token disalin!','ok');
+  });
 }
 
 function copyClientLink(){
