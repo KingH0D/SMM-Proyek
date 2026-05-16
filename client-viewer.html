@@ -514,19 +514,32 @@ function handleRtAccountUpdate(payload){
 }
 
 function handleRtNewComment(payload){
-  const c=payload.new;if(!c||c.role!=='admin')return;
+  const c=payload.new;
+  if(!c||c.role!=='admin')return;
+  if(c.account_id!==acctData?.id)return;
+
   // Persist to localStorage
   const store=getCmtStore();
   if(!store[c.content_id])store[c.content_id]=[];
+
+  // Avoid duplicates
+  if(store[c.content_id].find(m=>m.id===c.id))return;
+
   store[c.content_id].push({
-    id:c.id,role:'admin',author:c.author,text:c.body,pinned:c.pinned,
-    readByAdmin:true,readByClient:false,
-    dateISO:c.created_at,date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
+    pinned:c.pinned||false,readByAdmin:true,readByClient:false,
+    dateISO:c.created_at,
+    date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
   });
   saveCmtStore(store);
-  // Refresh card
+
+  // Re-render the specific comment section in DOM
   const wrap=document.getElementById('cmts-'+c.content_id);
-  if(wrap)wrap.innerHTML=renderCommentThreadHTML(c.content_id);
+  if(wrap){
+    wrap.innerHTML=renderCommentThreadHTML(c.content_id);
+  }
+
+  // Toast notification
   toast(`💬 Pesan baru dari Admin`,'ok');
 }
 
@@ -1260,25 +1273,31 @@ function postClientComment(contentId){
   const inp=document.getElementById('cmt-client-input-'+contentId);
   const text=(inp?.value||'').trim();
   if(!text){toast('Tulis komentar terlebih dahulu','warn');return;}
+
   const store=getCmtStore();
   if(!store[contentId])store[contentId]=[];
   const now=new Date();
-  store[contentId].push({
+  const newMsg={
     id:'cmt_'+Date.now(),role:'client',author:'Klien',text,
     dateISO:now.toISOString(),
     date:now.toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
     pinned:false,readByAdmin:false,readByClient:true
-  });
-  saveCmtStore(store);
-  // Mark all admin messages as read now
+  };
+  store[contentId].push(newMsg);
+
+  // Mark all admin messages as read
   store[contentId]=store[contentId].map(m=>m.role==='admin'?{...m,readByClient:true}:m);
   saveCmtStore(store);
+
   if(inp)inp.value='';
-  // Push to Supabase real-time
-  cvPushComment(contentId,store[contentId][store[contentId].length-1]);
-  // Re-render just this comment section
+
+  // Re-render immediately (optimistic update)
   const wrap=document.getElementById('cmts-'+contentId);
   if(wrap)wrap.innerHTML=renderCommentThreadHTML(contentId);
+
+  // Push to Supabase for real-time delivery to admin
+  cvPushComment(contentId,newMsg);
+
   toast('Komentar terkirim ke admin 💬','ok');
 }
 
