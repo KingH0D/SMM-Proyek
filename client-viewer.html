@@ -362,9 +362,25 @@ function cvInitSupabase(){
 function cvStartRealtime(){
   if(!_cvSb||!acctData)return;
   _cvRtChannel=_cvSb.channel('cv-realtime-'+acctData.id)
-    .on('postgres_changes',{event:'*',schema:'public',table:'smm_accounts',filter:`id=eq.${acctData.id}`},handleRtAccountUpdate)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'smm_comments',filter:`account_id=eq.${acctData.id}`},handleRtNewComment)
-    .subscribe();
+    .on('postgres_changes',{event:'*',schema:'public',table:'smm_accounts'},payload=>{
+      if(payload.new?.id===acctData.id)handleRtAccountUpdate(payload);
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'smm_comments'},payload=>{
+      if(payload.new?.account_id===acctData.id)handleRtNewComment(payload);
+    })
+    .subscribe(status=>{
+      console.log('CV Realtime:', status);
+      if(status==='SUBSCRIBED'){
+        updateSyncBadge('online');
+      } else if(status==='CHANNEL_ERROR'){
+        // Auto retry
+        setTimeout(()=>{
+          if(_cvRtChannel)_cvSb.removeChannel(_cvRtChannel);
+          _cvRtChannel=null;
+          cvStartRealtime();
+        },3000);
+      }
+    });
 }
 
 function handleRtAccountUpdate(payload){
