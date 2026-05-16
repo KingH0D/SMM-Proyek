@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit</title>
+<title>SMM Toolkit v5.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -1774,17 +1774,32 @@ function handleRtComment(payload){
   const c=payload.new;if(!c)return;
   const store=JSON.parse(localStorage.getItem('smm_comments_'+c.account_id)||'{}');
   if(!store[c.content_id])store[c.content_id]=[];
-  const exists=store[c.content_id].find(m=>m.id===c.id);
-  const msg={id:c.id,role:c.role,author:c.author,text:c.body,pinned:c.pinned,
-    readByAdmin:c.read_by_admin,readByClient:c.read_by_client,
-    dateISO:c.created_at,date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})};
-  if(exists)Object.assign(exists,msg);else store[c.content_id].push(msg);
+
+  // Avoid duplicates
+  if(store[c.content_id].find(m=>m.id===c.id)){
+    // Update existing (e.g. pinned changed)
+    store[c.content_id]=store[c.content_id].map(m=>m.id===c.id?{...m,pinned:c.pinned,readByAdmin:c.read_by_admin}:m);
+  } else {
+    store[c.content_id].push({
+      id:c.id,role:c.role,author:c.author,text:c.body,pinned:c.pinned,
+      readByAdmin:c.read_by_admin,readByClient:c.read_by_client,
+      dateISO:c.created_at,
+      date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    });
+  }
+
   localStorage.setItem('smm_comments_'+c.account_id,JSON.stringify(store));
+
   if(c.role==='client'){
     toast(`💬 Komentar baru dari klien: ${c.author||'Klien'}`,'ok');
     renderCal();
-    // Refresh thread if modal open
-    if(document.getElementById('mo-comment').classList.contains('open')&&_cmtAccountId===c.account_id&&_cmtContentId===c.content_id)renderThread();
+    // Refresh thread if comment modal is open for this content
+    if(document.getElementById('mo-comment').classList.contains('open')
+      &&_cmtAccountId===c.account_id
+      &&_cmtContentId===c.content_id){
+      renderThread();
+      scrollThreadToBottom();
+    }
   }
 }
 
