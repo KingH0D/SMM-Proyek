@@ -448,23 +448,8 @@ async function cvLoadFromSupabase(token){
 
     renderApp();
     cvStartRealtime();
-    updateSyncBadge('online');
-
-    // Handle anchor scroll after render
-    const hash=location.hash;
-    if(hash&&hash.startsWith('#review-')){
-      const targetId=hash.replace('#review-','');
-      setTimeout(()=>{
-        const card=document.getElementById('card-'+targetId);
-        if(card){
-          card.scrollIntoView({behavior:'smooth',block:'center'});
-          card.style.outline='3px solid var(--g)';
-          card.style.boxShadow='0 0 0 6px rgba(29,158,117,.15)';
-          setTimeout(()=>{card.style.outline='';card.style.boxShadow='';},3000);
-          toast('👆 Konten ini menunggu review kamu!','ok');
-        }
-      },600);
-    }
+    startCommentPolling(); // start polling immediately, don't wait for realtime
+    scrollToReviewAnchor();
 
   }catch(e){
     console.warn('cvLoadFromSupabase error:',e);
@@ -499,47 +484,64 @@ function cvStartRealtime(){
     });
 }
 
-// Polling fallback — pull latest comments every 5s from Supabase
+// Polling fallback — pull latest admin comments every 3s from Supabase
 let _pollInterval=null;
+let _lastPollTime=new Date(0).toISOString();
+
 function startCommentPolling(){
   if(_pollInterval)clearInterval(_pollInterval);
-  _pollInterval=setInterval(async()=>{
-    if(!_cvSb||!acctData)return;
-    try{
-      const{data}=await _cvSb
-        .from('smm_comments')
-        .select('*')
-        .eq('account_id',acctData.id)
-        .eq('role','admin')
-        .order('created_at',{ascending:false})
-        .limit(20);
+  _lastPollTime=new Date(Date.now()-10000).toISOString(); // check last 10s on first run
+  _pollInterval=setInterval(pollNewComments, 3000);
+}
 
-      if(!data||!data.length)return;
-      const store=getCmtStore();
-      let hasNew=false;
+async function pollNewComments(){
+  if(!_cvSb||!acctData)return;
+  try{
+    const{data,error}=await _cvSb
+      .from('smm_comments')
+      .select('*')
+      .eq('account_id',acctData.id)
+      .eq('role','admin')
+      .gt('created_at',_lastPollTime)
+      .order('created_at',{ascending:true});
 
-      data.forEach(c=>{
-        if(!store[c.content_id])store[c.content_id]=[];
-        if(!store[c.content_id].find(m=>m.id===c.id)){
-          store[c.content_id].push({
-            id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
-            pinned:c.pinned||false,readByAdmin:true,readByClient:false,
-            dateISO:c.created_at,
-            date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
-          });
-          hasNew=true;
-          // Re-render this content's comment section
-          const wrap=document.getElementById('cmts-'+c.content_id);
-          if(wrap)wrap.innerHTML=renderCommentThreadHTML(c.content_id);
-        }
+    if(error||!data||!data.length)return;
+
+    // Update lastPollTime to latest fetched
+    _lastPollTime=data[data.length-1].created_at;
+
+    const store=getCmtStore();
+    let hasNew=false;
+
+    data.forEach(c=>{
+      if(!store[c.content_id])store[c.content_id]=[];
+      // Skip if already exists
+      if(store[c.content_id].find(m=>m.id===c.id))return;
+
+      store[c.content_id].push({
+        id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
+        pinned:c.pinned||false,readByAdmin:true,readByClient:false,
+        dateISO:c.created_at,
+        date:new Date(c.created_at).toLocaleString('id-ID',{
+          day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'
+        })
       });
+      hasNew=true;
+    });
 
-      if(hasNew){
-        saveCmtStore(store);
-        toast('💬 Pesan baru dari Admin','ok');
-      }
-    }catch(e){}
-  },5000);
+    if(hasNew){
+      saveCmtStore(store);
+      // Re-render all affected comment sections
+      const affectedIds=[...new Set(data.map(c=>c.content_id))];
+      affectedIds.forEach(cid=>{
+        const wrap=document.getElementById('cmts-'+cid);
+        if(wrap)wrap.innerHTML=renderCommentThreadHTML(cid);
+      });
+      toast('💬 Pesan baru dari Admin','ok');
+    }
+  }catch(e){
+    console.warn('Poll error:',e);
+  }
 }
 
 function handleRtAccountUpdate(payload){
