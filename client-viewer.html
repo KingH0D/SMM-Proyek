@@ -545,14 +545,18 @@ function cvStartRealtime(){
     });
 }
 
-// Polling fallback — pull latest admin comments every 3s from Supabase
+// Polling — pull admin comments every 3s, track by ID (no timezone issues)
 let _pollInterval=null;
-let _lastPollTime=new Date(0).toISOString();
+let _seenCommentIds=new Set();
 
 function startCommentPolling(){
   if(_pollInterval)clearInterval(_pollInterval);
-  _lastPollTime=new Date(Date.now()-10000).toISOString(); // check last 10s on first run
-  _pollInterval=setInterval(pollNewComments, 3000);
+  // Pre-populate seen IDs from localStorage so we don't re-show old ones
+  try{
+    const store=getCmtStore();
+    Object.values(store).forEach(msgs=>(msgs||[]).forEach(m=>_seenCommentIds.add(m.id)));
+  }catch(e){}
+  _pollInterval=setInterval(pollNewComments,3000);
 }
 
 async function pollNewComments(){
@@ -563,22 +567,21 @@ async function pollNewComments(){
       .select('*')
       .eq('account_id',acctData.id)
       .eq('role','admin')
-      .gt('created_at',_lastPollTime)
-      .order('created_at',{ascending:true});
+      .order('created_at',{ascending:false})
+      .limit(30);
 
     if(error||!data||!data.length)return;
 
-    // Update lastPollTime to latest fetched
-    _lastPollTime=data[data.length-1].created_at;
-
     const store=getCmtStore();
     let hasNew=false;
+    const affectedIds=new Set();
 
     data.forEach(c=>{
-      if(!store[c.content_id])store[c.content_id]=[];
-      // Skip if already exists
-      if(store[c.content_id].find(m=>m.id===c.id))return;
+      // Skip if already seen
+      if(_seenCommentIds.has(c.id))return;
+      _seenCommentIds.add(c.id);
 
+      if(!store[c.content_id])store[c.content_id]=[];
       store[c.content_id].push({
         id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
         pinned:c.pinned||false,readByAdmin:true,readByClient:false,
@@ -588,12 +591,12 @@ async function pollNewComments(){
         })
       });
       hasNew=true;
+      affectedIds.add(c.content_id);
     });
 
     if(hasNew){
       saveCmtStore(store);
-      // Re-render all affected comment sections
-      const affectedIds=[...new Set(data.map(c=>c.content_id))];
+      // Re-render affected comment sections
       affectedIds.forEach(cid=>{
         const wrap=document.getElementById('cmts-'+cid);
         if(wrap)wrap.innerHTML=renderCommentThreadHTML(cid);
