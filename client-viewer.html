@@ -515,9 +515,8 @@ async function cvLoadFromSupabase(token){
   }catch(e){
     console.warn('cvLoadFromSupabase error:',e);
     updateSyncBadge('offline');
-    // Fallback to localStorage
     const loaded=loadFromLocalStorage(token);
-    if(loaded)renderApp();
+    if(loaded){renderApp();startCommentPolling();}
   }
 }
 
@@ -543,14 +542,18 @@ function cvStartRealtime(){
 
 // Polling — compare localStorage vs Supabase, render diff
 let _pollInterval=null;
+let _isPollRunning=false;
 
 function startCommentPolling(){
   if(_pollInterval)clearInterval(_pollInterval);
-  _pollInterval=setInterval(pollNewComments,2000);
+  _pollInterval=setInterval(pollNewComments,1500);
+  // Run once immediately
+  setTimeout(pollNewComments,500);
 }
 
 async function pollNewComments(){
-  if(!_cvSb||!acctData)return;
+  if(!_cvSb||!acctData||_isPollRunning)return;
+  _isPollRunning=true;
   try{
     const{data,error}=await _cvSb
       .from('smm_comments')
@@ -595,6 +598,8 @@ async function pollNewComments(){
     toast('💬 Pesan baru dari Admin','ok');
   }catch(e){
     console.warn('Poll error:',e);
+  }finally{
+    _isPollRunning=false;
   }
 }
 
