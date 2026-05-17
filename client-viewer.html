@@ -527,14 +527,10 @@ function cvStartRealtime(){
     .on('postgres_changes',{event:'*',schema:'public',table:'smm_accounts'},payload=>{
       if(payload.new?.id===acctData.id)handleRtAccountUpdate(payload);
     })
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'smm_comments'},payload=>{
-      if(payload.new?.account_id===acctData.id)handleRtNewComment(payload);
-    })
     .subscribe(status=>{
       console.log('CV Realtime:', status);
       if(status==='SUBSCRIBED'){
         updateSyncBadge('online');
-        startCommentPolling(); // start polling as backup
       } else if(status==='CHANNEL_ERROR'){
         setTimeout(()=>{
           if(_cvRtChannel)_cvSb.removeChannel(_cvRtChannel);
@@ -545,18 +541,12 @@ function cvStartRealtime(){
     });
 }
 
-// Polling — pull admin comments every 3s, track by ID (no timezone issues)
+// Polling — compare localStorage vs Supabase, render diff
 let _pollInterval=null;
-let _seenCommentIds=new Set();
 
 function startCommentPolling(){
   if(_pollInterval)clearInterval(_pollInterval);
-  // Pre-populate seen IDs from localStorage so we don't re-show old ones
-  try{
-    const store=getCmtStore();
-    Object.values(store).forEach(msgs=>(msgs||[]).forEach(m=>_seenCommentIds.add(m.id)));
-  }catch(e){}
-  _pollInterval=setInterval(pollNewComments,3000);
+  _pollInterval=setInterval(pollNewComments,2000);
 }
 
 async function pollNewComments(){
@@ -564,23 +554,25 @@ async function pollNewComments(){
   try{
     const{data,error}=await _cvSb
       .from('smm_comments')
-      .select('*')
+      .select('id,content_id,role,author,body,pinned,created_at')
       .eq('account_id',acctData.id)
       .eq('role','admin')
       .order('created_at',{ascending:false})
-      .limit(30);
+      .limit(50);
 
     if(error||!data||!data.length)return;
 
+    // Build set of IDs already in localStorage
     const store=getCmtStore();
-    let hasNew=false;
-    const affectedIds=new Set();
+    const storedIds=new Set();
+    Object.values(store).forEach(msgs=>(msgs||[]).forEach(m=>storedIds.add(m.id)));
 
-    data.forEach(c=>{
-      // Skip if already seen
-      if(_seenCommentIds.has(c.id))return;
-      _seenCommentIds.add(c.id);
+    // Find truly new ones
+    const newMsgs=data.filter(c=>!storedIds.has(c.id));
+    if(!newMsgs.length)return;
 
+    const affectedContentIds=new Set();
+    newMsgs.forEach(c=>{
       if(!store[c.content_id])store[c.content_id]=[];
       store[c.content_id].push({
         id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
@@ -590,19 +582,17 @@ async function pollNewComments(){
           day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'
         })
       });
-      hasNew=true;
-      affectedIds.add(c.content_id);
+      affectedContentIds.add(c.content_id);
     });
 
-    if(hasNew){
-      saveCmtStore(store);
-      // Re-render affected comment sections
-      affectedIds.forEach(cid=>{
-        const wrap=document.getElementById('cmts-'+cid);
-        if(wrap)wrap.innerHTML=renderCommentThreadHTML(cid);
-      });
-      toast('💬 Pesan baru dari Admin','ok');
-    }
+    saveCmtStore(store);
+
+    affectedContentIds.forEach(cid=>{
+      const wrap=document.getElementById('cmts-'+cid);
+      if(wrap)wrap.innerHTML=renderCommentThreadHTML(cid);
+    });
+
+    toast('💬 Pesan baru dari Admin','ok');
   }catch(e){
     console.warn('Poll error:',e);
   }
@@ -623,31 +613,8 @@ function handleRtAccountUpdate(payload){
 }
 
 function handleRtNewComment(payload){
-  const c=payload.new;
-  if(!c||c.role!=='admin')return;
-  if(c.account_id!==acctData?.id)return;
-
-  // Mark as seen so polling won't add it again
-  _seenCommentIds.add(c.id);
-
-  const store=getCmtStore();
-  if(!store[c.content_id])store[c.content_id]=[];
-  if(store[c.content_id].find(m=>m.id===c.id))return; // already exists
-
-  store[c.content_id].push({
-    id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
-    pinned:c.pinned||false,readByAdmin:true,readByClient:false,
-    dateISO:c.created_at,
-    date:new Date(c.created_at).toLocaleString('id-ID',{
-      day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'
-    })
-  });
-  saveCmtStore(store);
-
-  const wrap=document.getElementById('cmts-'+c.content_id);
-  if(wrap)wrap.innerHTML=renderCommentThreadHTML(c.content_id);
-
-  toast('💬 Pesan baru dari Admin','ok');
+  // Polling handles rendering — just trigger an immediate poll
+  pollNewComments();
 }
 
 // Also push client comment to Supabase when posted
