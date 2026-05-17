@@ -627,29 +627,27 @@ function handleRtNewComment(payload){
   if(!c||c.role!=='admin')return;
   if(c.account_id!==acctData?.id)return;
 
-  // Persist to localStorage
+  // Mark as seen so polling won't add it again
+  _seenCommentIds.add(c.id);
+
   const store=getCmtStore();
   if(!store[c.content_id])store[c.content_id]=[];
-
-  // Avoid duplicates
-  if(store[c.content_id].find(m=>m.id===c.id))return;
+  if(store[c.content_id].find(m=>m.id===c.id))return; // already exists
 
   store[c.content_id].push({
     id:c.id,role:'admin',author:c.author||'Admin',text:c.body,
     pinned:c.pinned||false,readByAdmin:true,readByClient:false,
     dateISO:c.created_at,
-    date:new Date(c.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    date:new Date(c.created_at).toLocaleString('id-ID',{
+      day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'
+    })
   });
   saveCmtStore(store);
 
-  // Re-render the specific comment section in DOM
   const wrap=document.getElementById('cmts-'+c.content_id);
-  if(wrap){
-    wrap.innerHTML=renderCommentThreadHTML(c.content_id);
-  }
+  if(wrap)wrap.innerHTML=renderCommentThreadHTML(c.content_id);
 
-  // Toast notification
-  toast(`💬 Pesan baru dari Admin`,'ok');
+  toast('💬 Pesan baru dari Admin','ok');
 }
 
 // Also push client comment to Supabase when posted
