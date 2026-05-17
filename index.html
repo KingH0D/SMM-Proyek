@@ -1684,6 +1684,10 @@ async function pullFromSupabase(){
     if(error)throw error;
     if(!rows||!rows.length){toast('Tidak ada data di Supabase','warn');setSyncState('online');return;}
 
+    // Remove local accounts that were deleted from Supabase
+    const supabaseIds=new Set(rows.map(r=>r.id));
+    accounts=accounts.filter(a=>supabaseIds.has(a.id));
+
     // Merge accounts
     rows.forEach(row=>{
       const existing=accounts.find(a=>a.id===row.id);
@@ -2079,8 +2083,25 @@ function saveAcct(){
 }
 function openDelAcct(id){delAcctId=id;document.getElementById('del-name').textContent=getA(id).name;document.getElementById('mo-del').classList.add('open');}
 function confirmDel(){
-  accounts=accounts.filter(a=>a.id!==delAcctId);persist();
-  if(activeId===delAcctId){activeId=null;document.getElementById('acct-nav').style.display='none';document.getElementById('sb-name').textContent='Dashboard';document.getElementById('sb-plat').textContent='Pilih atau buat akun';document.getElementById('tb-acts').innerHTML='<button class="btn" onclick="openExportModal()">Export Akun</button>';showPage('dashboard',null);}
+  const id=delAcctId;
+  accounts=accounts.filter(a=>a.id!==id);
+  // Write to localStorage directly (not persist() to avoid re-push)
+  localStorage.setItem('smm_v51',JSON.stringify(accounts));
+  // Delete from Supabase — cascade deletes comments & feedback too
+  if(_sb&&_sbConnected){
+    _sb.from('smm_comments').delete().eq('account_id',id).then(()=>{});
+    _sb.from('smm_feedback').delete().eq('account_id',id).then(()=>{});
+    _sb.from('smm_accounts').delete().eq('id',id).then(({error})=>{
+      if(error)toast('Hapus dari cloud gagal: '+error.message,'warn');
+      else toast('Akun dihapus dari cloud ☁️','ok');
+    });
+  }
+  // Also clear local comment/feedback stores
+  localStorage.removeItem('smm_comments_'+id);
+  localStorage.removeItem('smm_fbhist_'+id);
+  localStorage.removeItem('smm_notif_'+id);
+  localStorage.removeItem('smm_notiflog_'+id);
+  if(activeId===id){activeId=null;document.getElementById('acct-nav').style.display='none';document.getElementById('sb-name').textContent='Dashboard';document.getElementById('sb-plat').textContent='Pilih atau buat akun';document.getElementById('tb-acts').innerHTML='<button class="btn" onclick="openExportModal()">Export Akun</button>';showPage('dashboard',null);}
   renderRail();renderDashboard();updateRemBadge();closeMo();
 }
 
@@ -2568,10 +2589,27 @@ function saveCalEntry(){
 function deleteCalItem(key,idx){
   const a=getAct();if(!a)return;const arr=a.data.calendarData[key];if(!arr)return;
   const item=arr[idx];
+  const contentId=item?.id;
   // Unmark bank item
   if(item&&item.bankIdx!==undefined&&a.data.bankData[item.bankIdx]){delete a.data.bankData[item.bankIdx].scheduledKey;}
   arr.splice(idx,1);if(arr.length===0)delete a.data.calendarData[key];
-  persist();renderCal();renderDayPanel(key);updateRemBadge();toast('Konten dihapus','ok');
+  persist();
+
+  // Delete comments & feedback for this content from Supabase
+  if(_sb&&_sbConnected&&contentId){
+    _sb.from('smm_comments').delete().eq('content_id',contentId).then(()=>{});
+    _sb.from('smm_feedback').delete().eq('content_id',contentId).then(()=>{});
+  }
+  // Clear from localStorage stores too
+  if(contentId){
+    try{
+      const cs=JSON.parse(localStorage.getItem('smm_comments_'+a.id)||'{}');
+      delete cs[contentId];localStorage.setItem('smm_comments_'+a.id,JSON.stringify(cs));
+      const fs=JSON.parse(localStorage.getItem('smm_fbhist_'+a.id)||'{}');
+      delete fs[contentId];localStorage.setItem('smm_fbhist_'+a.id,JSON.stringify(fs));
+    }catch(e){}
+  }
+  renderCal();renderDayPanel(key);updateRemBadge();toast('Konten dihapus','ok');
 }
 function delCalEntry(){if(currentCalKey!==null&&currentCalItemId!==null)deleteCalItem(currentCalKey,currentCalItemId);closeMo();}
 
