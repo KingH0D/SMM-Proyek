@@ -152,12 +152,12 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:14px;l
 
 /* ── CHAT BUBBLES ── */
 .cmt-section{border-top:1px solid var(--bdr);padding:16px;background:var(--bg)}
-.cmt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cmt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cmt-header-label{font-size:11px;font-weight:700;color:var(--mu);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
-.cmt-thread{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.cmt-thread{display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
 /* Sender group spacing */
-.cmt-group{display:flex;flex-direction:column;gap:3px;margin-bottom:12px}
-.cmt-group:last-child{margin-bottom:0}
+.cmt-group{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
+.cmt-group:last-child{margin-bottom:4px}
 .cmt-group.admin-group{align-items:flex-end}
 .cmt-group.client-group{align-items:flex-start}
 /* Sender label — only on first bubble of each group */
@@ -199,25 +199,34 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:14px;l
 .tl-meta{font-size:10px;color:var(--hi);margin-top:2px}
 
 /* ── CALENDAR ── */
+.section-header{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;padding:14px 16px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh)}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:16px}
+.nav-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--bdr);background:var(--card);font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);transition:all .15s;font-family:var(--fn);padding:0}
+.nav-btn:hover{border-color:var(--g);color:var(--g);background:var(--gl)}
+.month-label{font-size:16px;font-weight:800;color:var(--tx);letter-spacing:-.02em;min-width:160px;text-align:center}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding-top:10px;border-top:1px solid var(--bdr)}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--tx2)}
+.legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
 .cal-wrap{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh)}
 .cal-head{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr);background:var(--bg)}
 .cal-hc{padding:10px 0;text-align:center;font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.07em;text-transform:uppercase}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
-.cal-cell{border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);min-height:76px;padding:6px;position:relative;transition:background .1s}
+.cal-cell{border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);min-height:80px;padding:6px;position:relative;transition:background .1s}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-cell.empty-cell{background:var(--bg);opacity:.5}
 .cal-cell.today{background:var(--gl)}
 .cal-cell.has-content{cursor:pointer}
 .cal-cell.has-content:hover{background:#f0fdf8}
-.cal-dn{font-size:11px;font-weight:600;color:var(--mu);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
-.today-pip{width:5px;height:5px;border-radius:50%;background:var(--g)}
+.cal-dn{font-size:11px;font-weight:700;color:var(--mu);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.cal-cell.today .cal-dn>span:first-child{width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:var(--g);color:#fff;border-radius:50%;font-size:11px}
+.today-pip{width:5px;height:5px;border-radius:50%;background:var(--g);display:none}
 .cal-chip{font-size:10px;padding:3px 6px;border-radius:6px;margin-top:2px;display:flex;align-items:center;gap:3px;line-height:1.3;cursor:pointer}
 .cal-chip-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .chip-edu{background:var(--gl);color:var(--gd)}.chip-hiburan{background:#fefce8;color:#854d0e}
 .chip-prod{background:var(--bl);color:#1d4ed8}.chip-inspirasi{background:#f5f3ff;color:#5b21b6}
 .chip-bts{background:var(--aml);color:var(--am)}.chip-promo{background:#fef2f2;color:#dc2626}.chip-testi{background:var(--aml);color:var(--am)}
 .status-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.cal-more{font-size:9px;color:var(--hi);margin-top:3px}
+.cal-more{font-size:9px;color:var(--hi);margin-top:3px;font-weight:600}
 
 /* ── TOKEN GATE ── */
 .gate-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#f0fdf8 0%,#f3f4f6 50%,#eff6ff 100%)}
@@ -284,8 +293,11 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:14px;l
   .acct-plat{display:none}
   .version-tabs{gap:4px}
   .version-tab{font-size:10px;padding:4px 10px}
-  .cal-cell{min-height:56px;padding:4px}
+  .cal-cell{min-height:60px;padding:4px}
   .cal-chip{font-size:9px;padding:2px 4px}
+  .month-label{font-size:14px;min-width:130px}
+  .legend{gap:6px}
+  .legend-item{font-size:10px}
 }
 
 /* ── ANIMATIONS ── */
@@ -1380,12 +1392,12 @@ function renderCommentThreadHTML(contentId){
       <div class="cmt-sender-label">
         <div class="cmt-avatar" style="background:${avatarBg}">${avatarLetter}</div>
         <span>${isAdmin?'Admin':'Kamu'}</span>
-        <span style="font-weight:400;color:var(--hi)">${m.date||''}</span>
       </div>
       <div class="bubble ${bubbleClass}${m.pinned?' pinned-bubble':''}">
         ${m.pinned?`<div class="pin-label">📌 Pesan Penting</div>`:''}
         ${escHtml(m.text)}
       </div>
+      <div class="bubble-time">${m.date||''}</div>
     </div>`;
   }
 
