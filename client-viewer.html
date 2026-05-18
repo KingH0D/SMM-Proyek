@@ -1360,38 +1360,71 @@ function getThread(contentId){
 
 function renderCommentThreadHTML(contentId){
   const thread=getThread(contentId);
-  const pinned=thread.filter(m=>m.pinned);
-  const rest=thread.filter(m=>!m.pinned);
-  const ordered=[...pinned,...rest.filter(m=>!m.pinned)];
-  // Actually show all in order with pinned marked
   const all=[...thread].sort((a,b)=>new Date(a.dateISO)-new Date(b.dateISO));
+  const SHOW=5;
+  const hasMore=all.length>SHOW;
+  const hidden=all.length-SHOW;
+  // Always show last 5 — pinned messages always included on top
+  const pinned=all.filter(m=>m.pinned);
+  const nonPinned=all.filter(m=>!m.pinned);
+  const visible=nonPinned.slice(-SHOW);
+
+  function buildBubble(m){
+    const isAdmin=m.role==='admin';
+    const side=isAdmin?'admin':'client-side';
+    const avatarBg=isAdmin?'#7c3aed':'#185FA5';
+    const avatarLetter=isAdmin?'A':'K';
+    return `<div class="cmt-bubble-wrap ${side}">
+      <div class="cmt-meta">
+        <div class="cmt-avatar" style="background:${avatarBg}">${avatarLetter}</div>
+        <span style="font-weight:600">${isAdmin?'Admin':'Kamu'}</span>
+        <span>${m.date||''}</span>
+      </div>
+      <div class="cmt-bubble ${side}${m.pinned?' pinned-bubble':''}">
+        ${m.pinned?`<div class="cmt-pin-label">📌 Pesan Penting</div>`:''}
+        ${escHtml(m.text)}
+      </div>
+    </div>`;
+  }
 
   let threadHtml='';
   if(!all.length){
-    threadHtml=`<div class="cmt-empty">Belum ada komentar dari admin.</div>`;
+    threadHtml=`<div class="cmt-empty">Belum ada komentar.<br><span style="font-size:11px">Admin akan memulai diskusi di sini.</span></div>`;
   } else {
-    threadHtml='<div class="cmt-thread">';
-    all.forEach(m=>{
-      const isAdmin=m.role==='admin';
-      const side=isAdmin?'admin':'client-side';
-      const avatarBg=isAdmin?'#7c3aed':'#185FA5';
-      const avatarLetter=isAdmin?'A':'K';
-      threadHtml+=`<div class="cmt-bubble-wrap ${side}">
-        <div class="cmt-meta">
-          <div class="cmt-avatar" style="background:${avatarBg}">${avatarLetter}</div>
-          <span style="font-weight:600">${isAdmin?'Admin':'Kamu'}</span>
-          <span>${m.date||''}</span>
-        </div>
-        <div class="cmt-bubble ${side}${m.pinned?' pinned-bubble':''}">
-          ${m.pinned?`<div class="cmt-pin-label">📌 Pesan Penting</div>`:''}
-          ${escHtml(m.text)}
-        </div>
+    // Pinned section
+    let pinnedHtml='';
+    if(pinned.length){
+      pinnedHtml=`<div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:.06em;margin-bottom:6px">📌 DIPIN</div>
+        ${pinned.map(buildBubble).join('')}
+        <div style="border-top:1px dashed #e9d5ff;margin:8px 0"></div>
       </div>`;
-    });
-    threadHtml+='</div>';
+    }
+
+    // Show more button (hidden messages)
+    const showMoreBtn=hasMore?`
+      <div id="cmt-more-${contentId}" style="text-align:center;margin-bottom:10px">
+        <button onclick="showAllComments('${contentId}')" style="padding:6px 16px;background:var(--bg);border:1px solid var(--bdr);border-radius:20px;font-size:12px;color:var(--mu);cursor:pointer;font-family:var(--fn);transition:all .15s" onmouseover="this.style.borderColor='var(--g)';this.style.color='var(--g)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--mu)'">
+          ↑ Lihat ${hidden} pesan sebelumnya
+        </button>
+      </div>`:'';
+
+    // Hidden messages (older ones)
+    const olderHtml=hasMore?`
+      <div id="cmt-older-${contentId}" style="display:none;flex-direction:column;gap:10px;margin-bottom:10px">
+        ${nonPinned.slice(0,-SHOW).map(buildBubble).join('')}
+        <div style="border-top:1px dashed var(--bdr);margin:4px 0"></div>
+      </div>`:'';
+
+    threadHtml=`<div class="cmt-thread" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
+      ${pinnedHtml}
+      ${olderHtml}
+      ${showMoreBtn}
+      ${visible.map(buildBubble).join('')}
+    </div>`;
   }
 
-  // Unread admin message count
+  // Unread banner
   const unread=thread.filter(m=>m.role==='admin'&&!m.readByClient).length;
   const unreadBanner=unread>0?`<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:7px 12px;font-size:12px;color:#1d4ed8;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px">
     <span style="width:7px;height:7px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
@@ -1401,7 +1434,7 @@ function renderCommentThreadHTML(contentId){
   return `
     <div style="font-size:11px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
       <span>💬 DISKUSI KONTEN</span>
-      ${thread.length?`<span style="font-size:11px;font-weight:400;color:var(--hi)">${thread.length} pesan</span>`:''}
+      ${all.length?`<span style="font-size:11px;font-weight:400;color:var(--hi)">${all.length} pesan</span>`:''}
     </div>
     ${unreadBanner}
     ${threadHtml}
@@ -1413,6 +1446,13 @@ function renderCommentThreadHTML(contentId){
         <button class="btn-send-cmt" onclick="postClientComment('${contentId}')">Kirim →</button>
       </div>
     </div>`;
+}
+
+function showAllComments(contentId){
+  const older=document.getElementById('cmt-older-'+contentId);
+  const btn=document.getElementById('cmt-more-'+contentId);
+  if(older){older.style.display='flex';}
+  if(btn){btn.style.display='none';}
 }
 
 function postClientComment(contentId){
