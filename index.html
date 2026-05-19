@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit</title>
+<title>SMM Toolkit v5.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -379,6 +379,12 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
 .mo.open{display:flex}
 .md{background:#fff;border-radius:var(--rl);padding:22px;width:420px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.14);max-height:92vh;overflow-y:auto}
 .md-lg{width:600px}.md-xl{width:740px}.md h3{font-size:15px;font-weight:600;margin-bottom:14px}
+.ai-preset-btn{padding:5px 12px;border:1.5px solid #ddd6fe;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;background:#f5f3ff;color:#7c3aed;font-family:var(--fn);transition:all .15s}
+.ai-preset-btn:hover{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.ai-bank-card{border:1.5px solid var(--bdr);border-radius:var(--rl);overflow:hidden;transition:all .2s}
+.ai-bank-card.selected{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.ai-bank-card-header{padding:10px 14px;background:var(--bg);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bdr);cursor:pointer}
+.ai-bank-card-body{padding:12px 14px;font-size:12px;color:var(--tx2);line-height:1.6}
 .macts{display:flex;gap:7px;margin-top:14px;justify-content:flex-end}
 
 /* ── TOAST ── */
@@ -607,7 +613,13 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
           <div class="bfp" onclick="filterBank('bts',this)">BTS</div>
           <div class="bfp" onclick="filterBank('promo',this)">Promo</div>
         </div>
-        <button class="btn bg" onclick="openBankModal()">+ Tambah Ide Konten</button>
+        <div style="display:flex;gap:7px">
+          <button class="btn" onclick="openAIBankGenerator()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;display:flex;align-items:center;gap:5px;font-weight:700;box-shadow:0 2px 8px rgba(124,58,237,.35)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            ✨ AI Generate Bank Konten
+          </button>
+          <button class="btn bg" onclick="openBankModal()">+ Tambah Manual</button>
+        </div>
       </div>
       <div class="bgrid" id="bank-grid"></div>
     </div>
@@ -812,7 +824,9 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <input type="hidden" id="bk_objective" value="">
 
-  <div class="slbl">📄 Content Brief</div>
+  <div class="slbl">📄 Content Brief
+    <button type="button" onclick="openAIBriefPanel()" style="float:right;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);box-shadow:0 2px 6px rgba(124,58,237,.35)">✨ AI Fill Brief</button>
+  </div>
   <div class="fr"><label class="fl">Deskripsi / Inti Konten</label><textarea id="bk_desc" placeholder="cth: Konten edukasi yang menjelaskan cara membedakan kue dengan pengawet vs tanpa pengawet. Pakai carousel 5 slide dengan visual perbandingan bahan."></textarea></div>
   <div class="fr"><label class="fl">Key Message (pesan utama yang ingin disampaikan)</label><input type="text" id="bk_keymsg" placeholder="cth: Kue Dapur Bunda Sari aman untuk keluarga karena 100% tanpa bahan pengawet"></div>
   <div class="g2">
@@ -823,7 +837,10 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
   <div class="fr"><label class="fl">Referensi / Inspirasi</label><input type="text" id="bk_ref" placeholder="cth: Link atau nama akun referensi"></div>
   <div class="fr"><label class="fl">Tags (pisah koma)</label><input type="text" id="bk_tags" placeholder="cth: edukasi, tips, kue, kesehatan, pengawet"></div>
 
-  <div class="macts"><button class="btn" onclick="closeMo()">Batal</button><button class="btn bg" onclick="saveBankItem()">💾 Simpan Ide</button></div>
+  <div class="macts">
+    <button class="btn" onclick="closeMo()">Batal</button>
+    <button class="btn bg" onclick="saveBankItem()">💾 Simpan Ide</button>
+  </div>
 </div></div>
 
 <!-- BANK PICKER (pilih dari bank untuk dijadwalkan di kalender) -->
@@ -948,7 +965,16 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
   <div class="fr"><label class="fl">Key Message</label><input type="text" id="cd_keymsg" placeholder="cth: Kue Dapur Bunda Sari aman dan sehat untuk keluarga"></div>
   <div class="g2">
     <div class="fr"><label class="fl">Catatan Visual / Desain</label><textarea id="cd_visual" placeholder="cth: Background putih, template edu-series, warna hijau sage + krem..." style="min-height:60px"></textarea></div>
-    <div class="fr"><label class="fl">Draft Caption</label><textarea id="cd_caption" placeholder="cth: Pernah beli kue kering tapi cepat melempem?..." style="min-height:60px"></textarea></div>
+    <div class="fr">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <label class="fl" style="margin-bottom:0">Draft Caption</label>
+        <button type="button" onclick="openAICaptionPanel()" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);transition:all .15s;box-shadow:0 2px 8px rgba(124,58,237,.35)" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          ✨ Generate AI
+        </button>
+      </div>
+      <textarea id="cd_caption" placeholder="cth: Pernah beli kue kering tapi cepat melempem?..." style="min-height:60px"></textarea>
+    </div>
   </div>
   <div class="g2">
     <div class="fr"><label class="fl">Referensi / Link Inspirasi</label><input type="text" id="cd_ref" placeholder="cth: https://instagram.com/p/xxx"></div>
@@ -1252,6 +1278,185 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 
   <div class="macts" style="flex-shrink:0"><button class="btn" onclick="closeMo()">Tutup</button></div>
+</div></div>
+
+<!-- AI BANK KONTEN GENERATOR -->
+<div class="mo" id="mo-ai-bank"><div class="md md-xl" style="max-width:720px;max-height:92vh;display:flex;flex-direction:column">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-shrink:0">
+    <div style="width:40px;height:40px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 12px rgba(124,58,237,.4)">🧠</div>
+    <div>
+      <h3 style="margin:0;font-size:16px;background:linear-gradient(135deg,#7c3aed,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent">AI Bank Konten Generator</h3>
+      <div style="font-size:12px;color:var(--mu)">Deskripsikan kebutuhanmu → AI buat ide konten lengkap secara otomatis</div>
+    </div>
+    <button class="btn bsm" onclick="closeMo()" style="margin-left:auto">✕</button>
+  </div>
+
+  <!-- STEP 1: Prompt area -->
+  <div id="ai-bank-step1" style="flex:1;overflow-y:auto">
+    <!-- Brand context (auto-filled) -->
+    <div id="ai-bank-brand-ctx" style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--mu);display:none">
+      <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:5px">📋 KONTEKS BRAND (dari strategi)</div>
+      <div id="ai-bank-brand-preview" style="line-height:1.7;color:var(--tx2)"></div>
+    </div>
+
+    <!-- Main prompt -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:6px">✍️ DESKRIPSIKAN IDE KONTEN YANG INGIN DIBUAT</div>
+      <textarea id="ai-bank-prompt" rows="4" placeholder="Contoh:
+• Buat 5 ide konten untuk promosi produk baru kami bulan ini
+• Generate konten edukasi tentang manfaat produk organik untuk ibu hamil
+• Buatkan 3 ide konten BTS yang menampilkan proses pembuatan produk
+• Ide konten untuk momen Ramadan — fokus pada nilai kebersamaan keluarga
+• 4 konten yang cocok untuk meningkatkan engagement di bulan ini" style="width:100%;padding:10px 14px;border:2px solid var(--bdr);border-radius:var(--r);font-size:13px;font-family:var(--fn);resize:none;outline:none;line-height:1.6;transition:border-color .15s" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='var(--bdr)'"></textarea>
+    </div>
+
+    <!-- Config row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--hi);margin-bottom:5px;letter-spacing:.06em">JUMLAH IDE</div>
+        <select id="ai-bank-count" style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);background:#fff;outline:none">
+          <option value="3">3 ide konten</option>
+          <option value="5" selected>5 ide konten</option>
+          <option value="7">7 ide konten</option>
+          <option value="10">10 ide konten</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--hi);margin-bottom:5px;letter-spacing:.06em">PILAR FOKUS</div>
+        <select id="ai-bank-pillar" style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);background:#fff;outline:none">
+          <option value="mix">Mix semua pilar</option>
+          <option value="edu">Edukasi</option>
+          <option value="hiburan">Hiburan</option>
+          <option value="prod">Produk</option>
+          <option value="inspirasi">Inspirasi</option>
+          <option value="bts">Behind the Scene</option>
+          <option value="promo">Promo & CTA</option>
+          <option value="testi">Testimoni</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--hi);margin-bottom:5px;letter-spacing:.06em">FORMAT UTAMA</div>
+        <select id="ai-bank-format" style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);background:#fff;outline:none">
+          <option value="mix">Mix semua format</option>
+          <option value="Carousel">Carousel</option>
+          <option value="Reels">Reels / Video</option>
+          <option value="Feed Foto">Feed Foto</option>
+          <option value="Story">Story</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Preset prompts -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:7px">⚡ PROMPT CEPAT</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        <button onclick="setAIBankPrompt('Buat ide konten untuk promosi produk unggulan bulan ini dengan angle manfaat dan keunggulan produk')" class="ai-preset-btn">🛍️ Promosi Produk</button>
+        <button onclick="setAIBankPrompt('Buat konten edukasi yang memberikan value dan tips bermanfaat untuk audiens kami')" class="ai-preset-btn">📚 Konten Edukasi</button>
+        <button onclick="setAIBankPrompt('Buat ide konten Behind the Scene yang memperlihatkan proses dan human side dari brand kami')" class="ai-preset-btn">🎬 Behind the Scene</button>
+        <button onclick="setAIBankPrompt('Buat konten yang menggunakan testimoni dan social proof dari pelanggan kami')" class="ai-preset-btn">⭐ Testimoni</button>
+        <button onclick="setAIBankPrompt('Buat konten hiburan dan relatable yang meningkatkan engagement organik')" class="ai-preset-btn">😄 Hiburan & Engagement</button>
+        <button onclick="setAIBankPrompt('Buat konten inspiratif dan motivasional yang selaras dengan nilai brand kami')" class="ai-preset-btn">✨ Inspirasi</button>
+        <button onclick="setAIBankPrompt('Buat konten promo dengan sense of urgency untuk flash sale atau penawaran terbatas')" class="ai-preset-btn">🔥 Flash Sale / Promo</button>
+        <button onclick="setAIBankPrompt('Buat ide konten mingguan yang seimbang antar pilar untuk engagement yang konsisten')" class="ai-preset-btn">📅 Konten Mingguan</button>
+      </div>
+    </div>
+
+    <!-- Generate button -->
+    <button id="ai-bank-gen-btn" onclick="generateBankKonten()" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--fn);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(124,58,237,.4);transition:all .18s">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span id="ai-bank-gen-label">🧠 Generate Bank Konten</span>
+    </button>
+  </div>
+
+  <!-- STEP 2: Results -->
+  <div id="ai-bank-results" style="display:none;flex:1;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0;padding-top:4px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--tx)">Hasil Generate</div>
+        <div id="ai-bank-result-sub" style="font-size:11px;color:var(--mu)"></div>
+      </div>
+      <div style="display:flex;gap:7px">
+        <button onclick="saveAllBankItems()" style="padding:7px 14px;background:var(--g);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fn)">💾 Simpan Semua yang Dipilih</button>
+        <button onclick="backToAIBankPrompt()" style="padding:7px 12px;background:none;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;color:var(--mu);cursor:pointer;font-family:var(--fn)">← Generate Ulang</button>
+      </div>
+    </div>
+    <div id="ai-bank-items" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+</div></div>
+
+<!-- AI CAPTION GENERATOR MODAL -->
+<div class="mo" id="mo-ai-caption"><div class="md md-lg" style="max-width:600px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <div style="width:38px;height:38px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 10px rgba(124,58,237,.4)">✨</div>
+    <div>
+      <h3 style="margin:0;font-size:16px;background:linear-gradient(135deg,#7c3aed,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent">AI Caption Generator</h3>
+      <div style="font-size:12px;color:var(--mu)">Powered by Claude — generate caption profesional dalam detik</div>
+    </div>
+  </div>
+
+  <!-- Config row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:5px">TONE OF VOICE</div>
+      <select id="ai-tone" style="width:100%;padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);background:#fff;outline:none">
+        <option value="friendly">😊 Friendly & Hangat</option>
+        <option value="professional">💼 Profesional</option>
+        <option value="playful">🎉 Playful & Fun</option>
+        <option value="inspirational">✨ Inspiratif</option>
+        <option value="educational">📚 Edukatif</option>
+        <option value="urgent">🔥 Urgensi / Promo</option>
+        <option value="storytelling">📖 Storytelling</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:5px">PANJANG CAPTION</div>
+      <select id="ai-length" style="width:100%;padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);background:#fff;outline:none">
+        <option value="short">Pendek (1–3 kalimat)</option>
+        <option value="medium" selected>Sedang (1 paragraf)</option>
+        <option value="long">Panjang (2–3 paragraf)</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:5px">SERTAKAN</div>
+      <div style="display:flex;flex-direction:column;gap:4px;padding-top:2px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ai-inc-emoji" checked style="accent-color:var(--pu)"> Emoji</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ai-inc-cta" checked style="accent-color:var(--pu)"> CTA (ajakan)</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ai-inc-hashtag" style="accent-color:var(--pu)"> Hashtag</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Brief display -->
+  <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--mu)">
+    <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:5px">INPUT DARI KONTEN</div>
+    <div id="ai-brief-preview" style="line-height:1.7;color:var(--tx2)"></div>
+  </div>
+
+  <!-- Custom instruction -->
+  <div style="margin-bottom:12px">
+    <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:5px">INSTRUKSI TAMBAHAN (opsional)</div>
+    <input type="text" id="ai-custom" placeholder="cth: Sebut nama produk di kalimat pertama, gunakan kata 'lezat' dan 'keluarga'" style="width:100%;padding:8px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:var(--fn);outline:none">
+  </div>
+
+  <!-- Generate button -->
+  <button id="ai-gen-btn" onclick="generateCaption()" style="width:100%;padding:11px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--fn);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;transition:all .18s;box-shadow:0 3px 12px rgba(124,58,237,.4)" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    <span id="ai-gen-label">✨ Generate Caption</span>
+  </button>
+
+  <!-- Results area -->
+  <div id="ai-results" style="display:none">
+    <div style="font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+      <span>HASIL GENERATE</span>
+      <button onclick="generateCaption()" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:100px;background:none;font-size:11px;color:var(--mu);cursor:pointer;font-family:var(--fn)">🔄 Regenerate</button>
+    </div>
+    <div id="ai-variants" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+  <div class="macts"><button class="btn" onclick="closeMo()">Tutup</button></div>
 </div></div>
 
 <!-- COMMENT THREAD MODAL -->
@@ -3750,6 +3955,429 @@ function startCommentPoller(){
 
 function escHtml(str){if(!str)return '';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function escStr(str){if(!str)return '';return String(str).replace(/'/g,"\\'");}
+
+// ══════════════════════════════════════
+// AI BANK KONTEN GENERATOR
+// ══════════════════════════════════════
+let _aiBankResults=[];// parsed generated items
+
+function openAIBankGenerator(){
+  const a=getAct();if(!a){toast('Pilih akun terlebih dahulu','warn');return;}
+
+  // Auto-fill brand context from strategy fields
+  const brandCtx=[];
+  const brandName=a.name||'';const platform=a.platform||'Instagram';
+  if(brandName)brandCtx.push(`Brand: ${brandName}`);
+  if(platform)brandCtx.push(`Platform: ${platform}`);
+  // Pull from fields if available
+  const fields=a.data.fields||{};
+  if(fields.brand_desc)brandCtx.push(`Deskripsi: ${fields.brand_desc}`);
+  if(fields.target)brandCtx.push(`Target: ${fields.target}`);
+  if(fields.usp)brandCtx.push(`USP: ${fields.usp}`);
+  if(fields.tov)brandCtx.push(`Tone: ${fields.tov}`);
+
+  const ctxWrap=document.getElementById('ai-bank-brand-ctx');
+  const ctxPrev=document.getElementById('ai-bank-brand-preview');
+  if(brandCtx.length>0&&ctxPrev){
+    ctxPrev.innerHTML=brandCtx.join('<br>');
+    if(ctxWrap)ctxWrap.style.display='block';
+  }
+
+  // Reset state
+  document.getElementById('ai-bank-prompt').value='';
+  document.getElementById('ai-bank-step1').style.display='block';
+  document.getElementById('ai-bank-results').style.display='none';
+  _aiBankResults=[];
+
+  document.getElementById('mo-ai-bank').classList.add('open');
+  setTimeout(()=>document.getElementById('ai-bank-prompt')?.focus(),200);
+}
+
+function setAIBankPrompt(text){
+  const el=document.getElementById('ai-bank-prompt');
+  if(el){el.value=text;el.focus();}
+}
+
+function backToAIBankPrompt(){
+  document.getElementById('ai-bank-step1').style.display='block';
+  document.getElementById('ai-bank-results').style.display='none';
+}
+
+async function generateBankKonten(){
+  const prompt=document.getElementById('ai-bank-prompt')?.value.trim();
+  if(!prompt){toast('Tulis deskripsi ide konten terlebih dahulu','warn');return;}
+
+  const a=getAct();if(!a)return;
+  const count=parseInt(document.getElementById('ai-bank-count')?.value||5);
+  const pillar=document.getElementById('ai-bank-pillar')?.value||'mix';
+  const format=document.getElementById('ai-bank-format')?.value||'mix';
+  const platform=a.platform||'Instagram';
+  const brandName=a.name||'';
+
+  // Get brand context
+  const fields=a.data.fields||{};
+  const brandCtx=[];
+  if(brandName)brandCtx.push(`Nama brand/akun: ${brandName}`);
+  if(platform)brandCtx.push(`Platform utama: ${platform}`);
+  if(fields.brand_desc)brandCtx.push(`Deskripsi bisnis: ${fields.brand_desc}`);
+  if(fields.target)brandCtx.push(`Target audiens: ${fields.target}`);
+  if(fields.usp)brandCtx.push(`Keunggulan/USP: ${fields.usp}`);
+  if(fields.tov)brandCtx.push(`Tone of voice: ${fields.tov}`);
+  if(fields.produk)brandCtx.push(`Produk/layanan: ${fields.produk}`);
+
+  // Get pillar names
+  const pl=getPL();
+  const pillarNames=Object.values(pl).join(', ');
+
+  // Loading state
+  const btn=document.getElementById('ai-bank-gen-btn');
+  const label=document.getElementById('ai-bank-gen-label');
+  btn.disabled=true;
+  label.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;animation:spin .8s linear infinite;flex-shrink:0"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> AI sedang berpikir...';
+
+  const systemPrompt=`Kamu adalah social media strategist & copywriter profesional Indonesia yang berpengalaman membuat konten viral dan engaging untuk UMKM dan brand lokal.
+
+TUGAS: Generate ${count} ide konten lengkap untuk bank konten berdasarkan prompt dan konteks brand.
+
+INFORMASI BRAND:
+${brandCtx.length?brandCtx.join('\n'):'(belum ada data brand)'}
+
+PILAR KONTEN YANG TERSEDIA: ${pillarNames}
+${pillar!=='mix'?`FOKUS PILAR: ${pl[pillar]||pillar}`:''}
+${format!=='mix'?`FORMAT UTAMA: ${format}`:''}
+
+INSTRUKSI FORMAT RESPONS (WAJIB JSON, tidak ada teks lain):
+Respond ONLY with a valid JSON array. No explanation. No markdown. Just the JSON.
+
+[
+  {
+    "title": "Judul konten yang menarik dan spesifik",
+    "cat": "edu|hiburan|prod|inspirasi|bts|promo|testi",
+    "format": "Feed Foto|Carousel|Reels|Story",
+    "objective": "awareness|engagement|conversion|sales",
+    "desc": "Deskripsi detail isi konten, pendekatan, dan struktur (2-3 kalimat)",
+    "keyMessage": "Satu kalimat pesan utama yang ingin disampaikan",
+    "audience": "Target audiens spesifik untuk konten ini",
+    "cta": "Call to action yang spesifik",
+    "visual": "Arah visual dan catatan desain singkat",
+    "tags": "tag1, tag2, tag3, tag4, tag5",
+    "hook": "Kalimat pembuka/hook yang menarik untuk caption"
+  }
+]`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{role:'user',content:`${systemPrompt}\n\nPROMPT DARI ADMIN: ${prompt}`}]
+      })
+    });
+    const data=await res.json();
+    const rawText=data.content?.[0]?.text||'';
+
+    // Parse JSON — strip any backticks if present
+    const cleaned=rawText.replace(/```json\n?|\n?```/g,'').trim();
+    let items;
+    try{items=JSON.parse(cleaned);}
+    catch(e){
+      // Try to extract JSON array
+      const match=cleaned.match(/\[[\s\S]*\]/);
+      if(match)items=JSON.parse(match[0]);
+      else throw new Error('Format JSON tidak valid');
+    }
+
+    if(!Array.isArray(items)||!items.length)throw new Error('Tidak ada hasil yang digenerate');
+
+    _aiBankResults=items;
+    renderAIBankResults(items);
+
+    document.getElementById('ai-bank-step1').style.display='none';
+    document.getElementById('ai-bank-results').style.display='block';
+    document.getElementById('ai-bank-result-sub').textContent=`${items.length} ide konten berhasil dibuat · Pilih yang ingin disimpan`;
+    toast(`🧠 ${items.length} ide konten berhasil digenerate!`,'ok');
+
+  }catch(err){
+    toast('Generate gagal: '+err.message,'warn');
+    console.error('AI Bank error:',err);
+  }finally{
+    btn.disabled=false;
+    label.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> 🧠 Generate Bank Konten';
+  }
+}
+
+function renderAIBankResults(items){
+  const wrap=document.getElementById('ai-bank-items');if(!wrap)return;
+  const pl=getPL();
+  const PLC_MAP={edu:'#1D9E75',hiburan:'#D4A800',prod:'#185FA5',inspirasi:'#6B21A8',bts:'#854F0B',promo:'#993C1D',testi:'#854F0B'};
+  const OBJ_LABELS={awareness:'Awareness',engagement:'Engagement',conversion:'Conversion',sales:'Sales'};
+
+  wrap.innerHTML=items.map((item,i)=>{
+    const color=PLC_MAP[item.cat]||'#7c3aed';
+    const pillarName=pl[item.cat]||item.cat||'Konten';
+    return `<div class="ai-bank-card selected" id="ai-bcard-${i}" onclick="toggleAIBankCard(${i})">
+      <div class="ai-bank-card-header">
+        <!-- Checkbox -->
+        <div id="ai-bcheck-${i}" style="width:18px;height:18px;border-radius:5px;background:#7c3aed;border:2px solid #7c3aed;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s">
+          <svg viewBox="0 0 12 10" fill="none" style="width:10px;height:8px"><polyline points="1,5 4,8 11,1" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div style="width:4px;height:36px;background:${color};border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--tx);line-height:1.3">${escHtml(item.title)}</div>
+          <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
+            <span style="padding:2px 7px;background:${color}18;color:${color};border-radius:4px;font-size:10px;font-weight:700">${pillarName}</span>
+            <span style="padding:2px 7px;background:var(--bg);color:var(--mu);border-radius:4px;font-size:10px">${item.format||'Feed Foto'}</span>
+            ${item.objective?`<span style="padding:2px 7px;background:#eff6ff;color:#1d4ed8;border-radius:4px;font-size:10px">${OBJ_LABELS[item.objective]||item.objective}</span>`:''}
+          </div>
+        </div>
+        <button onclick="event.stopPropagation();saveSingleBankItem(${i})" style="padding:5px 12px;background:var(--g);color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);white-space:nowrap;flex-shrink:0;transition:all .15s">💾 Simpan</button>
+      </div>
+      <div class="ai-bank-card-body">
+        ${item.desc?`<div style="margin-bottom:8px"><span style="font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.05em">Deskripsi</span><div style="margin-top:3px">${escHtml(item.desc)}</div></div>`:''}
+        ${item.keyMessage?`<div style="margin-bottom:8px;padding:8px 11px;background:#f0fdf8;border-left:3px solid var(--g);border-radius:0 6px 6px 0"><span style="font-size:10px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.05em">Key Message</span><div style="margin-top:2px;font-weight:600;color:var(--gd)">${escHtml(item.keyMessage)}</div></div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${item.audience?`<div><span style="font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.05em">Target Audiens</span><div style="margin-top:2px">${escHtml(item.audience)}</div></div>`:''}
+          ${item.cta?`<div><span style="font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.05em">CTA</span><div style="margin-top:2px">${escHtml(item.cta)}</div></div>`:''}
+        </div>
+        ${item.hook?`<div style="margin-top:8px;padding:8px 11px;background:#faf5ff;border-left:3px solid #7c3aed;border-radius:0 6px 6px 0"><span style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.05em">Hook Caption</span><div style="margin-top:2px;font-style:italic;color:#5b21b6">"${escHtml(item.hook)}"</div></div>`:''}
+        ${item.visual?`<div style="margin-top:8px"><span style="font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.05em">Arah Visual</span><div style="margin-top:2px">${escHtml(item.visual)}</div></div>`:''}
+        ${item.tags?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${item.tags.split(',').map(t=>`<span style="padding:2px 8px;background:var(--bg);border:1px solid var(--bdr);border-radius:100px;font-size:10px;color:var(--mu)">${t.trim()}</span>`).join('')}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAIBankCard(idx){
+  const card=document.getElementById('ai-bcard-'+idx);
+  const check=document.getElementById('ai-bcheck-'+idx);
+  if(!card||!check)return;
+  const isSelected=card.classList.contains('selected');
+  if(isSelected){
+    card.classList.remove('selected');
+    check.style.background='none';check.style.borderColor='var(--bdr)';
+    check.innerHTML='';
+  } else {
+    card.classList.add('selected');
+    check.style.background='#7c3aed';check.style.borderColor='#7c3aed';
+    check.innerHTML='<svg viewBox="0 0 12 10" fill="none" style="width:10px;height:8px"><polyline points="1,5 4,8 11,1" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
+  }
+}
+
+function saveSingleBankItem(idx){
+  const item=_aiBankResults[idx];if(!item)return;
+  const a=getAct();if(!a)return;
+  if(!a.data.bankData)a.data.bankData=[];
+  a.data.bankData.push({
+    title:item.title,cat:item.cat||'edu',desc:item.desc||'',
+    format:item.format||'Feed Foto',platform:a.platform||'Instagram',
+    tags:item.tags||'',keyMessage:item.keyMessage||'',
+    audience:item.audience||'',cta:item.cta||'',
+    visual:item.visual||'',ref:'',objective:item.objective||'',
+    hook:item.hook||'',used:'ide'
+  });
+  persist();renderBank();renderDashboard();
+  // Visual feedback on card
+  const card=document.getElementById('ai-bcard-'+idx);
+  if(card){
+    card.style.opacity='.5';
+    const saveBtn=card.querySelector('button');
+    if(saveBtn){saveBtn.textContent='✓ Tersimpan';saveBtn.style.background='var(--g)';}
+  }
+  toast(`💡 "${item.title}" disimpan ke Bank Konten!`,'ok');
+}
+
+function saveAllBankItems(){
+  const a=getAct();if(!a)return;
+  if(!a.data.bankData)a.data.bankData=[];
+  let saved=0;
+  _aiBankResults.forEach((item,i)=>{
+    const card=document.getElementById('ai-bcard-'+i);
+    if(!card?.classList.contains('selected'))return;
+    a.data.bankData.push({
+      title:item.title,cat:item.cat||'edu',desc:item.desc||'',
+      format:item.format||'Feed Foto',platform:a.platform||'Instagram',
+      tags:item.tags||'',keyMessage:item.keyMessage||'',
+      audience:item.audience||'',cta:item.cta||'',
+      visual:item.visual||'',ref:'',objective:item.objective||'',
+      hook:item.hook||'',used:'ide'
+    });
+    saved++;
+  });
+  if(!saved){toast('Pilih minimal satu ide konten','warn');return;}
+  persist();renderBank();renderDashboard();
+  closeMo();
+  toast(`🎉 ${saved} ide konten berhasil disimpan ke Bank Konten!`,'ok');
+}
+
+// ══════════════════════════════════════
+// AI CAPTION GENERATOR
+// ══════════════════════════════════════
+const TONE_LABELS={
+  friendly:'Friendly & Hangat — gunakan sapaan akrab, kata-kata yang dekat dan personal',
+  professional:'Profesional — bahasa formal tapi tidak kaku, terpercaya',
+  playful:'Playful & Fun — energik, ringan, bisa pakai wordplay atau humor',
+  inspirational:'Inspiratif & Motivasi — menyentuh, penuh semangat, emotionally resonant',
+  educational:'Edukatif — informatif, clear, step-by-step, berikan value nyata',
+  urgent:'Urgensi/Promo — FOMO, time-limited, direct call to action',
+  storytelling:'Storytelling — awali dengan cerita/skenario, bangun koneksi emosional'
+};
+
+const LENGTH_GUIDE={
+  short:'1-3 kalimat saja, langsung ke poin utama',
+  medium:'1 paragraf singkat (4-6 kalimat)',
+  long:'2-3 paragraf dengan hook, isi, dan CTA yang jelas'
+};
+
+const PL_LABELS={
+  edu:'Edukasi',hiburan:'Hiburan',prod:'Produk',
+  inspirasi:'Inspirasi',bts:'Behind the Scene',promo:'Promo & CTA',testi:'Testimoni'
+};
+
+function openAICaptionPanel(){
+  // Pull current values from calendar modal
+  const title=document.getElementById('cd_title')?.value||'';
+  const brief=document.getElementById('cd_brief')?.value||'';
+  const keymsg=document.getElementById('cd_keymsg')?.value||'';
+  const pillar=document.getElementById('cd_pillar')?.value||'edu';
+  const format=document.getElementById('cd_format')?.value||'Feed Foto';
+  const objective=document.getElementById('cd_objective')?.value||'';
+  const platform=getAct()?.platform||'Instagram';
+
+  // Preview input
+  const preview=[];
+  if(title)preview.push(`📌 Judul: ${title}`);
+  if(brief)preview.push(`📝 Brief: ${brief}`);
+  if(keymsg)preview.push(`🎯 Key Message: ${keymsg}`);
+  if(pillar)preview.push(`🏷 Pilar: ${PL_LABELS[pillar]||pillar}`);
+  if(format)preview.push(`📐 Format: ${format}`);
+  if(platform)preview.push(`📱 Platform: ${platform}`);
+  document.getElementById('ai-brief-preview').innerHTML=preview.join('<br>')||'<span style="color:var(--hi);font-style:italic">Isi brief konten di form sebelumnya untuk hasil lebih akurat</span>';
+  document.getElementById('ai-results').style.display='none';
+  document.getElementById('ai-variants').innerHTML='';
+  document.getElementById('ai-custom').value='';
+  document.getElementById('mo-ai-caption').classList.add('open');
+}
+
+async function generateCaption(){
+  const btn=document.getElementById('ai-gen-btn');
+  const label=document.getElementById('ai-gen-label');
+  const resultsWrap=document.getElementById('ai-results');
+  const variantsWrap=document.getElementById('ai-variants');
+
+  // Get inputs
+  const title=document.getElementById('cd_title')?.value||'';
+  const brief=document.getElementById('cd_brief')?.value||'';
+  const keymsg=document.getElementById('cd_keymsg')?.value||'';
+  const pillar=document.getElementById('cd_pillar')?.value||'edu';
+  const format=document.getElementById('cd_format')?.value||'Feed Foto';
+  const objective=document.getElementById('cd_objective')?.value||'';
+  const platform=getAct()?.platform||'Instagram';
+  const brandName=getAct()?.name||'';
+  const tone=document.getElementById('ai-tone')?.value||'friendly';
+  const length=document.getElementById('ai-length')?.value||'medium';
+  const incEmoji=document.getElementById('ai-inc-emoji')?.checked;
+  const incCTA=document.getElementById('ai-inc-cta')?.checked;
+  const incHashtag=document.getElementById('ai-inc-hashtag')?.checked;
+  const custom=document.getElementById('ai-custom')?.value.trim()||'';
+
+  // Loading state
+  btn.disabled=true;
+  label.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;animation:spin .8s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Generating...';
+  resultsWrap.style.display='block';
+  variantsWrap.innerHTML=`<div style="text-align:center;padding:20px;color:var(--mu)">
+    <div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">✨</div>
+    <div style="font-size:13px">Claude sedang menulis caption...</div>
+  </div>`;
+
+  const prompt=`Kamu adalah copywriter profesional media sosial Indonesia yang berpengalaman.
+
+Tulis 3 VARIASI caption untuk konten berikut:
+
+INFORMASI KONTEN:
+- Platform: ${platform}
+- Brand/Akun: ${brandName}
+- Judul Konten: ${title||'(belum diisi)'}
+- Pilar Konten: ${PL_LABELS[pillar]||pillar}
+- Format: ${format}
+- Brief: ${brief||'(belum diisi)'}
+- Key Message: ${keymsg||'(belum diisi)'}
+- Objective: ${objective||'(belum ditentukan)'}
+
+PANDUAN PENULISAN:
+- Tone: ${TONE_LABELS[tone]}
+- Panjang: ${LENGTH_GUIDE[length]}
+- Bahasa: Indonesia yang natural, bukan terjemahan kaku
+- ${incEmoji?'Gunakan emoji yang relevan secara natural':'Tanpa emoji'}
+- ${incCTA?'Akhiri dengan CTA yang spesifik dan actionable':'Tanpa CTA eksplisit'}
+- ${incHashtag?'Tambahkan 5-8 hashtag relevan di akhir (mix hashtag besar dan niche)':'Tanpa hashtag'}
+${custom?`- Instruksi khusus: ${custom}`:''}
+
+FORMAT RESPONS (WAJIB diikuti persis):
+Tulis tepat 3 variasi, masing-masing diawali "VARIASI 1:", "VARIASI 2:", "VARIASI 3:" dan diakhiri dengan "---"
+
+Setiap variasi harus berbeda pendekatan/angle-nya. Langsung tulis captionnya tanpa penjelasan tambahan.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.[0]?.text||'';
+
+    if(!text){throw new Error('Tidak ada respons dari AI');}
+
+    // Parse variants
+    const rawVariants=text.split(/VARIASI \d+:/i).filter(v=>v.trim());
+    const variants=rawVariants.map(v=>v.replace(/^[\n\s]+|---[\s\S]*$|\s+$/g,'').trim()).filter(v=>v.length>10);
+
+    if(!variants.length){throw new Error('Format respons tidak sesuai');}
+
+    variantsWrap.innerHTML=variants.map((v,i)=>`
+      <div style="border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden;transition:border-color .15s" onmouseover="this.style.borderColor='var(--pu)'" onmouseout="this.style.borderColor='var(--bdr)'">
+        <div style="padding:8px 12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr)">
+          <div style="font-size:11px;font-weight:700;color:var(--pu)">Variasi ${i+1}</div>
+          <button onclick="useCaption(${i})" style="padding:5px 14px;background:var(--pu);color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);transition:all .15s" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='var(--pu)'">
+            ✓ Pakai Ini
+          </button>
+        </div>
+        <div id="ai-var-${i}" data-text="${escAttr(v)}" style="padding:12px;font-size:13px;line-height:1.7;color:var(--tx2);white-space:pre-wrap;max-height:200px;overflow-y:auto;cursor:text">${escHtml(v)}</div>
+      </div>`).join('');
+
+    toast(`✨ ${variants.length} variasi caption berhasil digenerate!`,'ok');
+  }catch(err){
+    variantsWrap.innerHTML=`<div style="text-align:center;padding:20px;color:var(--co)">
+      <div style="font-size:20px;margin-bottom:8px">⚠️</div>
+      <div style="font-size:13px;font-weight:600">Gagal generate</div>
+      <div style="font-size:12px;color:var(--mu);margin-top:4px">${err.message}</div>
+    </div>`;
+    toast('Generate gagal: '+err.message,'warn');
+  }finally{
+    btn.disabled=false;
+    label.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> ✨ Generate Caption';
+  }
+}
+
+function useCaption(idx){
+  const el=document.getElementById('ai-var-'+idx);
+  if(!el)return;
+  const text=el.getAttribute('data-text')||el.textContent;
+  const captionField=document.getElementById('cd_caption');
+  if(captionField){captionField.value=text;captionField.focus();}
+  closeMo();
+  // Reopen calendar modal
+  document.getElementById('mo-cal').classList.add('open');
+  toast('Caption berhasil dipasang ✅','ok');
+}
+
+function escAttr(str){if(!str)return '';return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // ══════════════════════════════════════
 // PDF REPORT GENERATOR
