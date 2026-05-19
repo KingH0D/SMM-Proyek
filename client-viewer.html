@@ -151,73 +151,29 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:14px;l
 .history-item+.history-item{border-top:1px solid var(--bdr)}
 
 /* ── CHAT BUBBLES ── */
-.cmt-section {
-  border-top: 1px solid var(--bdr);
-  padding: 16px;
-  background: var(--bg);
-}
-.cmt-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
+/* ── CHAT BUBBLES ── */
+.cmt-section{border-top:1px solid var(--bdr);padding:16px;background:var(--bg)}
+.cmt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cmt-header-label{font-size:11px;font-weight:700;color:var(--mu);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
-.cmt-thread {
-  display: flex;
-  flex-direction: column;
-  gap: 14px; /* Memberikan jarak vertikal yang konsisten antar balon chat */
-  margin-bottom: 16px;
-}
+.cmt-thread{display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
 /* Sender group spacing */
-.cmt-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 2px;
-}
+.cmt-group{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
 .cmt-group:last-child{margin-bottom:4px}
-.cmt-group.admin-group { align-items: flex-end; }
-.cmt-group.client-group { align-items: flex-start; }
+.cmt-group.admin-group{align-items:flex-end}
+.cmt-group.client-group{align-items:flex-start}
 /* Sender label — only on first bubble of each group */
 .cmt-sender-label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mu);font-weight:600;margin-bottom:4px}
 .cmt-group.admin-group .cmt-sender-label{flex-direction:row-reverse}
 .cmt-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0}
 /* Bubble shapes */
-.bubble {
-  width: fit-content;
-  max-width: 75%;          /* Membatasi lebar maksimal agar tidak penuh selayar */
-  padding: 9px 14px;       /* Jarak dalam teks yang lebih longgar & lega */
-  font-size: 13px;         /* Ukuran font yang pas untuk ruang diskusi */
-  line-height: 1.5;        /* Jarak antar baris teks yang ideal */
-  word-break: break-word;
-  white-space: pre-wrap;
-  position: relative;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Shadow tipis agar elegan */
-}
-.bubble.admin-bubble {
-  background: #f3f4f6;
-  color: #1f2937;
-  border-radius: 4px 14px 14px 14px; /* Sudut melengkung yang rapi & presisi */
-  border: none;
-}
-.bubble.client-bubble {
-  background: #2563eb;
-  color: #ffffff;
-  border-radius: 14px 4px 14px 14px; /* Sudut melengkung yang simetris di sisi kanan */
-  border: none;
-}
-.bubble.pinned-bubble {
-  border: 2px solid var(--pu)!important;
-  background: #f5f3ff!important;
-  color: #4c1d95!important;
-}
-.bubble-time {
-  font-size: 10px;
-  color: var(--hi);
-  margin-top: 3px;
-  padding: 0 4px;
-}
+.bubble{width:fit-content;max-width:75%;padding:7px 12px;font-size:14px;line-height:1.45;word-break:break-word;white-space:pre-wrap;position:relative}
+.bubble.admin-bubble{background:#fff;border:1px solid #e9d5ff;color:#3b0764;border-radius:18px 4px 18px 18px;box-shadow:0 1px 4px rgba(124,58,237,.1)}
+.bubble.client-bubble{background:#fff;border:1px solid #bfdbfe;color:#1e3a5f;border-radius:4px 18px 18px 18px;box-shadow:0 1px 4px rgba(37,99,235,.08)}
+.bubble.pinned-bubble{border-color:var(--pu)!important;border-width:2px!important}
+.bubble-time{font-size:10px;color:var(--hi);margin-top:4px;padding:0 2px}
+.cmt-group.admin-group .bubble-time{text-align:right}
+.cmt-group.client-group .bubble-time{text-align:left}
+.pin-label{font-size:10px;font-weight:700;color:var(--pu);margin-bottom:4px;display:flex;align-items:center;gap:3px}
 .cmt-group.admin-group .bubble-time{text-align:right}
 .cmt-group.client-group .bubble-time{text-align:left}
 .pin-label{font-size:10px;font-weight:700;color:var(--pu);margin-bottom:4px;display:flex;align-items:center;gap:3px}
