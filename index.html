@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit v5.1</title>
+<title>SMM Toolkit</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -462,6 +462,10 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       </div>
       <div id="tb-acts"><button class="btn" onclick="openExportModal()">Export Akun</button></div>
+      <div id="ai-status-pill" onclick="openAISettings()" title="Pengaturan AI — klik untuk ubah" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--bdr);border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;color:var(--mu);transition:all .15s;user-select:none" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--bdr)'">
+        <span id="ai-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--hi);transition:background .3s;flex-shrink:0"></span>
+        <span id="ai-status-label">AI: Belum setup</span>
+      </div>
       <div id="sync-indicator" onclick="openSyncSettings()" title="Cloud Sync" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--bdr);border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;color:var(--mu);transition:all .15s" onmouseover="this.style.borderColor='var(--g)'" onmouseout="this.style.borderColor='var(--bdr)'">
         <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:var(--hi);transition:background .3s"></span>
         <span id="sync-label">Offline</span>
@@ -1549,6 +1553,157 @@ table.tk{width:100%;border-collapse:collapse;font-size:13px}
     <button class="btn" onclick="closeMo()">Tutup</button>
     <button id="sfr-send-notif-btn" class="btn" style="border-color:#185FA5;color:#185FA5;gap:6px;display:none" onclick="sfrSendNotif();closeMo()">📲 Kirim Notifikasi Juga</button>
     <button class="sfr-copy-btn" onclick="sfrCopyLink()" style="border-radius:var(--r);padding:9px 18px">📋 Salin Link Review</button>
+  </div>
+</div></div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- AI SETTINGS MODAL                         -->
+<!-- ══════════════════════════════════════════ -->
+<div class="mo" id="mo-ai-settings"><div class="md md-lg">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🤖</div>
+    <div>
+      <h3 style="margin:0;font-size:16px">Pengaturan Multi-AI</h3>
+      <div style="font-size:12px;color:var(--mu);margin-top:2px">Aktifkan satu atau lebih AI — sistem akan auto-failover jika ada yang gagal</div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:var(--r);padding:11px 14px;margin-bottom:16px;font-size:12px;color:#6b21a8;line-height:1.7">
+    <strong>⚡ Cara Kerja Failover Otomatis:</strong><br>
+    Sistem mencoba AI sesuai urutan prioritas. Jika satu gagal (error, limit token, timeout) — <strong>otomatis berpindah ke AI cadangan</strong> tanpa gangguan. Drag urutan untuk ubah prioritas.
+  </div>
+
+  <!-- Priority order display -->
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Urutan Prioritas AI</div>
+    <div id="ai-priority-list" style="display:flex;flex-direction:column;gap:6px">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- Provider Cards -->
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+
+    <!-- Claude (Anthropic) -->
+    <div style="border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden" id="ai-card-claude">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);cursor:pointer" onclick="toggleAICard('claude')">
+        <span style="font-size:18px">🟣</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">Claude (Anthropic)</div>
+          <div style="font-size:11px;color:var(--mu)">claude-sonnet-4-20250514 · Paling akurat & kreatif</div>
+        </div>
+        <div id="ai-toggle-claude" style="width:38px;height:20px;border-radius:10px;background:var(--bdr);position:relative;transition:background .2s;cursor:pointer;flex-shrink:0">
+          <div id="ai-knob-claude" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+        </div>
+        <span id="ai-badge-claude" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#f3e8ff;color:#7c3aed;white-space:nowrap">P1</span>
+      </div>
+      <div id="ai-body-claude" style="padding:12px 14px;border-top:1px solid var(--bdr);display:none">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px">API Key Anthropic — dapatkan di <a href="https://console.anthropic.com" target="_blank" style="color:#7c3aed">console.anthropic.com</a></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="ai-key-claude" placeholder="sk-ant-api03-..." style="flex:1;padding:8px 11px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:monospace;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='var(--bdr)'">
+          <button onclick="testAIKey('claude')" style="padding:7px 12px;background:none;border:1px solid var(--bdr);border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fn);white-space:nowrap;transition:all .15s" onmouseover="this.style.borderColor='#7c3aed';this.style.color='#7c3aed'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='inherit'">🧪 Test</button>
+        </div>
+        <div id="ai-test-result-claude" style="font-size:11px;margin-top:6px"></div>
+        <div style="font-size:11px;color:var(--hi);margin-top:8px">Model: <code style="background:var(--bg);padding:1px 5px;border-radius:3px">claude-sonnet-4-20250514</code> · Max tokens: 4000 · Timeout: 25s</div>
+      </div>
+    </div>
+
+    <!-- ChatGPT (OpenAI) -->
+    <div style="border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden" id="ai-card-openai">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);cursor:pointer" onclick="toggleAICard('openai')">
+        <span style="font-size:18px">🟢</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">ChatGPT (OpenAI)</div>
+          <div style="font-size:11px;color:var(--mu)">gpt-4o · Serbaguna & cepat</div>
+        </div>
+        <div id="ai-toggle-openai" style="width:38px;height:20px;border-radius:10px;background:var(--bdr);position:relative;transition:background .2s;cursor:pointer;flex-shrink:0">
+          <div id="ai-knob-openai" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+        </div>
+        <span id="ai-badge-openai" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#f0fdf4;color:#166534;white-space:nowrap">OFF</span>
+      </div>
+      <div id="ai-body-openai" style="padding:12px 14px;border-top:1px solid var(--bdr);display:none">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px">API Key OpenAI — dapatkan di <a href="https://platform.openai.com/api-keys" target="_blank" style="color:#16a34a">platform.openai.com</a></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="ai-key-openai" placeholder="sk-proj-..." style="flex:1;padding:8px 11px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:monospace;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='var(--bdr)'">
+          <button onclick="testAIKey('openai')" style="padding:7px 12px;background:none;border:1px solid var(--bdr);border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fn);white-space:nowrap;transition:all .15s" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='inherit'">🧪 Test</button>
+        </div>
+        <div id="ai-test-result-openai" style="font-size:11px;margin-top:6px"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <div style="flex:1">
+            <div style="font-size:10px;font-weight:600;color:var(--hi);margin-bottom:4px">MODEL</div>
+            <select id="ai-model-openai" style="width:100%;padding:6px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;outline:none">
+              <option value="gpt-4o">gpt-4o (recommended)</option>
+              <option value="gpt-4o-mini">gpt-4o-mini (hemat)</option>
+              <option value="gpt-4-turbo">gpt-4-turbo</option>
+              <option value="gpt-3.5-turbo">gpt-3.5-turbo (paling hemat)</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--hi);margin-top:8px">Max tokens: 4000 · Timeout: 25s · via api.openai.com</div>
+      </div>
+    </div>
+
+    <!-- Gemini (Google) -->
+    <div style="border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden" id="ai-card-gemini">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);cursor:pointer" onclick="toggleAICard('gemini')">
+        <span style="font-size:18px">🔵</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">Gemini (Google)</div>
+          <div style="font-size:11px;color:var(--mu)">gemini-2.0-flash · Cepat & hemat</div>
+        </div>
+        <div id="ai-toggle-gemini" style="width:38px;height:20px;border-radius:10px;background:var(--bdr);position:relative;transition:background .2s;cursor:pointer;flex-shrink:0">
+          <div id="ai-knob-gemini" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+        </div>
+        <span id="ai-badge-gemini" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#eff6ff;color:#1e40af;white-space:nowrap">OFF</span>
+      </div>
+      <div id="ai-body-gemini" style="padding:12px 14px;border-top:1px solid var(--bdr);display:none">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px">API Key Google AI — dapatkan di <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#1d4ed8">aistudio.google.com</a></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="ai-key-gemini" placeholder="AIzaSy..." style="flex:1;padding:8px 11px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;font-family:monospace;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='#1d4ed8'" onblur="this.style.borderColor='var(--bdr)'">
+          <button onclick="testAIKey('gemini')" style="padding:7px 12px;background:none;border:1px solid var(--bdr);border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fn);white-space:nowrap;transition:all .15s" onmouseover="this.style.borderColor='#1d4ed8';this.style.color='#1d4ed8'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='inherit'">🧪 Test</button>
+        </div>
+        <div id="ai-test-result-gemini" style="font-size:11px;margin-top:6px"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <div style="flex:1">
+            <div style="font-size:10px;font-weight:600;color:var(--hi);margin-bottom:4px">MODEL</div>
+            <select id="ai-model-gemini" style="width:100%;padding:6px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;outline:none">
+              <option value="gemini-2.0-flash">gemini-2.0-flash (recommended)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro (akurat)</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash (hemat)</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--hi);margin-top:8px">Max tokens: 4000 · Timeout: 25s · via generativelanguage.googleapis.com</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Failover behavior -->
+  <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 14px;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:8px">⚙️ Perilaku Failover</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="ai-notify-failover" checked style="width:14px;height:14px;accent-color:#7c3aed">
+        <span>Tampilkan notifikasi saat AI berpindah (toast)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="ai-show-provider" checked style="width:14px;height:14px;accent-color:#7c3aed">
+        <span>Tampilkan badge AI yang digunakan di hasil generate</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Current failover log -->
+  <div id="ai-failover-log-wrap" style="display:none;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Log Failover Terakhir</div>
+    <div id="ai-failover-log" style="font-size:11px;color:var(--mu);background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 11px;line-height:1.8;max-height:100px;overflow-y:auto;font-family:monospace"></div>
+  </div>
+
+  <div class="macts">
+    <button class="btn" onclick="closeMo()">Tutup</button>
+    <button class="btn bg" onclick="saveAISettings()">💾 Simpan Pengaturan</button>
   </div>
 </div></div>
 
@@ -3956,53 +4111,357 @@ function startCommentPoller(){
 function escHtml(str){if(!str)return '';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function escStr(str){if(!str)return '';return String(str).replace(/'/g,"\\'");}
 
-// ══════════════════════════════════════
-// AI BANK KONTEN GENERATOR
-// ══════════════════════════════════════
-let _aiBankResults=[];// parsed generated items
 
-function openAIBankGenerator(){
-  const a=getAct();if(!a){toast('Pilih akun terlebih dahulu','warn');return;}
+// ══════════════════════════════════════════════════════════════════
+//  MULTI-AI ENGINE  ·  v7  ·  Claude → ChatGPT → Gemini failover
+// ══════════════════════════════════════════════════════════════════
 
-  // Auto-fill brand context from strategy fields
-  const brandCtx=[];
-  const brandName=a.name||'';const platform=a.platform||'Instagram';
-  if(brandName)brandCtx.push(`Brand: ${brandName}`);
-  if(platform)brandCtx.push(`Platform: ${platform}`);
-  // Pull from fields if available
-  const fields=a.data.fields||{};
-  if(fields.brand_desc)brandCtx.push(`Deskripsi: ${fields.brand_desc}`);
-  if(fields.target)brandCtx.push(`Target: ${fields.target}`);
-  if(fields.usp)brandCtx.push(`USP: ${fields.usp}`);
-  if(fields.tov)brandCtx.push(`Tone: ${fields.tov}`);
+// ── Default config (saved to localStorage as 'aiCfg') ─────────────
+const AI_DEFAULTS = {
+  priority: ['claude','openai','gemini'],   // order to try
+  providers: {
+    claude:  { enabled:true,  key:'', model:'claude-sonnet-4-20250514' },
+    openai:  { enabled:false, key:'', model:'gpt-4o'                  },
+    gemini:  { enabled:false, key:'', model:'gemini-2.0-flash'        },
+  },
+  notifyFailover: true,
+  showProvider:   true,
+};
 
-  const ctxWrap=document.getElementById('ai-bank-brand-ctx');
-  const ctxPrev=document.getElementById('ai-bank-brand-preview');
-  if(brandCtx.length>0&&ctxPrev){
-    ctxPrev.innerHTML=brandCtx.join('<br>');
-    if(ctxWrap)ctxWrap.style.display='block';
+// runtime state
+let _aiCfg = JSON.parse(JSON.stringify(AI_DEFAULTS));
+let _aiFailoverLog = [];     // [{ts, from, to, reason}]
+let _lastAIProvider = null;  // which AI responded last
+
+// ── Persist / restore ─────────────────────────────────────────────
+function saveAIConfig(){
+  try{ localStorage.setItem('aiCfg', JSON.stringify(_aiCfg)); }catch(e){}
+}
+function loadAIConfig(){
+  try{
+    const raw = localStorage.getItem('aiCfg');
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    // Deep merge (don't lose new provider defaults)
+    _aiCfg.priority = saved.priority || _aiCfg.priority;
+    _aiCfg.notifyFailover = saved.notifyFailover !== undefined ? saved.notifyFailover : true;
+    _aiCfg.showProvider   = saved.showProvider   !== undefined ? saved.showProvider   : true;
+    for(const id of ['claude','openai','gemini']){
+      if(saved.providers?.[id]){
+        _aiCfg.providers[id] = {..._aiCfg.providers[id], ...saved.providers[id]};
+      }
+    }
+  }catch(e){}
+}
+
+// ── Pill indicator (topbar) ────────────────────────────────────────
+function refreshAIStatusPill(){
+  const dot   = document.getElementById('ai-status-dot');
+  const label = document.getElementById('ai-status-label');
+  if(!dot||!label) return;
+  const active = _aiCfg.priority.filter(id => _aiCfg.providers[id]?.enabled && _aiCfg.providers[id]?.key);
+  if(!active.length){
+    dot.style.background   = '#f59e0b';
+    label.textContent      = 'AI: Belum setup';
+    return;
   }
-
-  // Reset state
-  document.getElementById('ai-bank-prompt').value='';
-  document.getElementById('ai-bank-step1').style.display='block';
-  document.getElementById('ai-bank-results').style.display='none';
-  _aiBankResults=[];
-
-  document.getElementById('mo-ai-bank').classList.add('open');
-  setTimeout(()=>document.getElementById('ai-bank-prompt')?.focus(),200);
+  const names = {claude:'Claude', openai:'GPT-4o', gemini:'Gemini'};
+  dot.style.background = '#7c3aed';
+  label.textContent    = 'AI: ' + active.map(id=>names[id]).join(' → ');
 }
 
-function setAIBankPrompt(text){
-  const el=document.getElementById('ai-bank-prompt');
-  if(el){el.value=text;el.focus();}
+// ─────────────────────────────────────────────────────────────────
+//  CORE CALLER — use this everywhere instead of raw fetch
+//  Returns: { text: string, provider: string }
+//  Throws on complete failure (all providers exhausted)
+// ─────────────────────────────────────────────────────────────────
+async function aiCall(userPrompt, {maxTokens=1500, jsonMode=false, signal}={}){
+  const queue = _aiCfg.priority.filter(id =>
+    _aiCfg.providers[id]?.enabled && _aiCfg.providers[id]?.key
+  );
+  if(!queue.length) throw new Error('Belum ada API key AI yang dikonfigurasi. Buka pengaturan AI (klik pill di topbar).');
+
+  let lastErr = null;
+  for(let i=0; i<queue.length; i++){
+    const providerId = queue[i];
+    const cfg = _aiCfg.providers[providerId];
+    try{
+      // Notify failover (not first attempt)
+      if(i>0 && _aiCfg.notifyFailover){
+        const prevName = AI_PROVIDER_META[queue[i-1]].label;
+        const curName  = AI_PROVIDER_META[providerId].label;
+        toast(`⚡ ${prevName} gagal — beralih ke ${curName}...`, 'warn');
+        _aiFailoverLog.push({
+          ts: new Date().toLocaleTimeString('id-ID'),
+          from: queue[i-1], to: providerId,
+          reason: lastErr?.message || 'unknown'
+        });
+        _aiFailoverLog = _aiFailoverLog.slice(-20); // keep last 20
+      }
+
+      const text = await _callProvider(providerId, cfg, userPrompt, maxTokens, signal);
+      _lastAIProvider = providerId;
+      return { text, provider: providerId };
+
+    }catch(err){
+      lastErr = err;
+      console.warn(`[MultiAI] ${providerId} failed:`, err.message);
+      // If last in queue, bubble the error
+      if(i === queue.length-1) throw new Error(`Semua AI gagal. Error terakhir (${AI_PROVIDER_META[providerId].label}): ${err.message}`);
+    }
+  }
+  throw lastErr;
 }
 
-function backToAIBankPrompt(){
-  document.getElementById('ai-bank-step1').style.display='block';
-  document.getElementById('ai-bank-results').style.display='none';
+// Per-provider call implementations
+const AI_PROVIDER_META = {
+  claude:  { label:'Claude',  color:'#7c3aed', emoji:'🟣' },
+  openai:  { label:'ChatGPT', color:'#16a34a', emoji:'🟢' },
+  gemini:  { label:'Gemini',  color:'#1d4ed8', emoji:'🔵' },
+};
+
+async function _callProvider(id, cfg, prompt, maxTokens, signal){
+  const timeout = 25000; // 25 s per provider
+  const controller = new AbortController();
+  const tId = setTimeout(()=>controller.abort(), timeout);
+  const sig = signal || controller.signal;
+
+  try{
+    if(id==='claude')  return await _callClaude(cfg, prompt, maxTokens, sig);
+    if(id==='openai')  return await _callOpenAI(cfg, prompt, maxTokens, sig);
+    if(id==='gemini')  return await _callGemini(cfg, prompt, maxTokens, sig);
+    throw new Error('Unknown provider: '+id);
+  }finally{
+    clearTimeout(tId);
+  }
 }
 
+async function _callClaude(cfg, prompt, maxTokens, signal){
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', signal,
+    headers:{'Content-Type':'application/json','x-api-key':cfg.key,'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({
+      model: cfg.model || 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      messages:[{role:'user', content:prompt}]
+    })
+  });
+  const data = await res.json();
+  if(!res.ok){
+    const msg = data?.error?.message || res.statusText;
+    // Surface rate-limit and overload as retriable
+    if(res.status===529||res.status===429) throw new Error(`Rate limit/overload: ${msg}`);
+    throw new Error(msg);
+  }
+  const text = data.content?.[0]?.text||'';
+  if(!text) throw new Error('Respons kosong dari Claude');
+  return text;
+}
+
+async function _callOpenAI(cfg, prompt, maxTokens, signal){
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method:'POST', signal,
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
+    body: JSON.stringify({
+      model: cfg.model || 'gpt-4o',
+      max_tokens: maxTokens,
+      messages:[{role:'user', content:prompt}]
+    })
+  });
+  const data = await res.json();
+  if(!res.ok){
+    const msg = data?.error?.message || res.statusText;
+    if(res.status===429) throw new Error(`Rate limit: ${msg}`);
+    throw new Error(msg);
+  }
+  const text = data.choices?.[0]?.message?.content||'';
+  if(!text) throw new Error('Respons kosong dari ChatGPT');
+  return text;
+}
+
+async function _callGemini(cfg, prompt, maxTokens, signal){
+  const model = cfg.model || 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cfg.key}`;
+  const res = await fetch(url, {
+    method:'POST', signal,
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      generationConfig:{ maxOutputTokens: maxTokens }
+    })
+  });
+  const data = await res.json();
+  if(!res.ok){
+    const msg = data?.error?.message || res.statusText;
+    if(res.status===429) throw new Error(`Rate limit: ${msg}`);
+    throw new Error(msg);
+  }
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  if(!text) throw new Error('Respons kosong dari Gemini');
+  return text;
+}
+
+// ── Provider Badge (shown in AI result areas) ──────────────────────
+function buildProviderBadge(providerId){
+  if(!_aiCfg.showProvider || !providerId) return '';
+  const m = AI_PROVIDER_META[providerId];
+  if(!m) return '';
+  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;background:var(--bg);border:1px solid var(--bdr);font-size:10px;font-weight:700;color:${m.color}">${m.emoji} ${m.label}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  AI SETTINGS MODAL  —  open / save / test
+// ══════════════════════════════════════════════════════════════════
+
+function openAISettings(){
+  loadAIConfig(); // fresh load
+  _renderAISettingsModal();
+  document.getElementById('mo-ai-settings').classList.add('open');
+}
+
+function _renderAISettingsModal(){
+  // Sync UI from _aiCfg
+  for(const id of ['claude','openai','gemini']){
+    const p = _aiCfg.providers[id];
+    _setAIToggleUI(id, p.enabled);
+    const keyEl = document.getElementById('ai-key-'+id);
+    if(keyEl && p.key) keyEl.value = p.key;
+    const modelEl = document.getElementById('ai-model-'+id);
+    if(modelEl && p.model) modelEl.value = p.model;
+    // Clear test result
+    const testEl = document.getElementById('ai-test-result-'+id);
+    if(testEl) testEl.innerHTML = '';
+    // Show body if enabled
+    const body = document.getElementById('ai-body-'+id);
+    if(body) body.style.display = p.enabled ? 'block' : 'none';
+  }
+  // Checkboxes
+  const notifEl = document.getElementById('ai-notify-failover');
+  const showEl  = document.getElementById('ai-show-provider');
+  if(notifEl) notifEl.checked = _aiCfg.notifyFailover;
+  if(showEl)  showEl.checked  = _aiCfg.showProvider;
+
+  // Priority list
+  _renderPriorityList();
+
+  // Failover log
+  _renderFailoverLog();
+}
+
+function _renderPriorityList(){
+  const wrap = document.getElementById('ai-priority-list');
+  if(!wrap) return;
+  const meta = AI_PROVIDER_META;
+  wrap.innerHTML = _aiCfg.priority.map((id,i)=>{
+    const p = _aiCfg.providers[id];
+    const on = p.enabled && p.key;
+    const m = meta[id];
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${on?'#faf5ff':'var(--bg)'};border:1px solid ${on?'#e9d5ff':'var(--bdr)'};border-radius:var(--r)">
+      <span style="font-size:12px;color:var(--hi);min-width:16px;font-weight:700">${i+1}</span>
+      <span style="font-size:15px">${m.emoji}</span>
+      <span style="font-size:12px;font-weight:600;flex:1;color:${on?m.color:'var(--mu)'}">${m.label}</span>
+      <span style="font-size:10px;padding:2px 8px;border-radius:100px;background:${on?'#f3e8ff':'var(--bdr)'};color:${on?'#7c3aed':'var(--hi)'};">${on?'✓ Aktif':'Nonaktif'}</span>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <button onclick="movePriority('${id}',-1)" ${i===0?'disabled':''} style="padding:0 5px;background:none;border:1px solid var(--bdr);border-radius:3px;cursor:pointer;font-size:10px;line-height:1.6;${i===0?'opacity:.3':''}">▲</button>
+        <button onclick="movePriority('${id}',1)" ${i===_aiCfg.priority.length-1?'disabled':''} style="padding:0 5px;background:none;border:1px solid var(--bdr);border-radius:3px;cursor:pointer;font-size:10px;line-height:1.6;${i===_aiCfg.priority.length-1?'opacity:.3':''}">▼</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function movePriority(id, dir){
+  const idx = _aiCfg.priority.indexOf(id);
+  if(idx<0) return;
+  const newIdx = idx+dir;
+  if(newIdx<0||newIdx>=_aiCfg.priority.length) return;
+  [_aiCfg.priority[idx], _aiCfg.priority[newIdx]] = [_aiCfg.priority[newIdx], _aiCfg.priority[idx]];
+  _renderPriorityList();
+  _updateAllBadges();
+}
+
+function _updateAllBadges(){
+  for(const id of ['claude','openai','gemini']){
+    const badge = document.getElementById('ai-badge-'+id);
+    if(!badge) continue;
+    const p = _aiCfg.providers[id];
+    const on = p.enabled && p.key;
+    const idx = _aiCfg.priority.indexOf(id);
+    if(!on){ badge.textContent='OFF'; badge.style.background='var(--bg)'; badge.style.color='var(--hi)'; continue; }
+    badge.textContent = `P${idx+1}`;
+    const colors = {claude:{bg:'#f3e8ff',c:'#7c3aed'},openai:{bg:'#f0fdf4',c:'#166534'},gemini:{bg:'#eff6ff',c:'#1e40af'}};
+    badge.style.background = colors[id].bg; badge.style.color = colors[id].c;
+  }
+}
+
+function toggleAICard(id){
+  const p = _aiCfg.providers[id];
+  p.enabled = !p.enabled;
+  _setAIToggleUI(id, p.enabled);
+  const body = document.getElementById('ai-body-'+id);
+  if(body) body.style.display = p.enabled ? 'block' : 'none';
+  _renderPriorityList();
+  _updateAllBadges();
+}
+
+function _setAIToggleUI(id, on){
+  const tog  = document.getElementById('ai-toggle-'+id);
+  const knob = document.getElementById('ai-knob-'+id);
+  if(!tog||!knob) return;
+  const colors = {claude:'#7c3aed', openai:'#16a34a', gemini:'#1d4ed8'};
+  tog.style.background  = on ? colors[id] : 'var(--bdr)';
+  knob.style.left       = on ? '20px' : '2px';
+}
+
+function saveAISettings(){
+  // Read keys & models from inputs
+  for(const id of ['claude','openai','gemini']){
+    const keyEl   = document.getElementById('ai-key-'+id);
+    const modelEl = document.getElementById('ai-model-'+id);
+    if(keyEl)   _aiCfg.providers[id].key   = keyEl.value.trim();
+    if(modelEl) _aiCfg.providers[id].model = modelEl.value;
+  }
+  _aiCfg.notifyFailover = document.getElementById('ai-notify-failover')?.checked ?? true;
+  _aiCfg.showProvider   = document.getElementById('ai-show-provider')?.checked   ?? true;
+  saveAIConfig();
+  refreshAIStatusPill();
+  _updateAllBadges();
+  toast('✅ Pengaturan AI disimpan!','ok');
+  closeMo();
+}
+
+// ── Test individual key ────────────────────────────────────────────
+async function testAIKey(id){
+  const keyEl   = document.getElementById('ai-key-'+id);
+  const modelEl = document.getElementById('ai-model-'+id);
+  const resEl   = document.getElementById('ai-test-result-'+id);
+  if(!keyEl||!resEl) return;
+  const key   = keyEl.value.trim();
+  const model = modelEl?.value || _aiCfg.providers[id].model;
+  if(!key){ resEl.innerHTML='<span style="color:#dc2626">⚠ Isi API key terlebih dahulu</span>'; return; }
+  resEl.innerHTML='<span style="color:var(--mu)">⏳ Menguji koneksi...</span>';
+  try{
+    const tmpCfg = {key, model};
+    const text = await _callProvider(id, tmpCfg, 'Balas hanya dengan kata: OK', 150, null);
+    resEl.innerHTML=`<span style="color:#16a34a">✅ Berhasil! Respons: "${text.trim().slice(0,30)}"</span>`;
+  }catch(e){
+    resEl.innerHTML=`<span style="color:#dc2626">❌ Gagal: ${e.message}</span>`;
+  }
+}
+
+function _renderFailoverLog(){
+  const wrap = document.getElementById('ai-failover-log-wrap');
+  const log  = document.getElementById('ai-failover-log');
+  if(!wrap||!log) return;
+  if(!_aiFailoverLog.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  log.innerHTML = _aiFailoverLog.slice().reverse().map(e=>
+    `[${e.ts}] ${AI_PROVIDER_META[e.from]?.label} → ${AI_PROVIDER_META[e.to]?.label} · ${e.reason}`
+  ).join('<br>');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PATCH generateBankKonten() — use aiCall with failover
+// ══════════════════════════════════════════════════════════════════
 async function generateBankKonten(){
   const prompt=document.getElementById('ai-bank-prompt')?.value.trim();
   if(!prompt){toast('Tulis deskripsi ide konten terlebih dahulu','warn');return;}
@@ -4014,7 +4473,6 @@ async function generateBankKonten(){
   const platform=a.platform||'Instagram';
   const brandName=a.name||'';
 
-  // Get brand context
   const fields=a.data.fields||{};
   const brandCtx=[];
   if(brandName)brandCtx.push(`Nama brand/akun: ${brandName}`);
@@ -4025,11 +4483,9 @@ async function generateBankKonten(){
   if(fields.tov)brandCtx.push(`Tone of voice: ${fields.tov}`);
   if(fields.produk)brandCtx.push(`Produk/layanan: ${fields.produk}`);
 
-  // Get pillar names
   const pl=getPL();
   const pillarNames=Object.values(pl).join(', ');
 
-  // Loading state
   const btn=document.getElementById('ai-bank-gen-btn');
   const label=document.getElementById('ai-bank-gen-label');
   btn.disabled=true;
@@ -4063,27 +4519,17 @@ Respond ONLY with a valid JSON array. No explanation. No markdown. Just the JSON
     "tags": "tag1, tag2, tag3, tag4, tag5",
     "hook": "Kalimat pembuka/hook yang menarik untuk caption"
   }
-]`;
+]
+
+PROMPT DARI ADMIN: ${prompt}`;
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:4000,
-        messages:[{role:'user',content:`${systemPrompt}\n\nPROMPT DARI ADMIN: ${prompt}`}]
-      })
-    });
-    const data=await res.json();
-    const rawText=data.content?.[0]?.text||'';
+    const {text:rawText, provider} = await aiCall(systemPrompt, {maxTokens:4000});
 
-    // Parse JSON — strip any backticks if present
     const cleaned=rawText.replace(/```json\n?|\n?```/g,'').trim();
     let items;
     try{items=JSON.parse(cleaned);}
     catch(e){
-      // Try to extract JSON array
       const match=cleaned.match(/\[[\s\S]*\]/);
       if(match)items=JSON.parse(match[0]);
       else throw new Error('Format JSON tidak valid');
@@ -4092,12 +4538,14 @@ Respond ONLY with a valid JSON array. No explanation. No markdown. Just the JSON
     if(!Array.isArray(items)||!items.length)throw new Error('Tidak ada hasil yang digenerate');
 
     _aiBankResults=items;
-    renderAIBankResults(items);
+    renderAIBankResults(items, provider);
 
     document.getElementById('ai-bank-step1').style.display='none';
     document.getElementById('ai-bank-results').style.display='block';
-    document.getElementById('ai-bank-result-sub').textContent=`${items.length} ide konten berhasil dibuat · Pilih yang ingin disimpan`;
-    toast(`🧠 ${items.length} ide konten berhasil digenerate!`,'ok');
+    const m=AI_PROVIDER_META[provider];
+    document.getElementById('ai-bank-result-sub').innerHTML=
+      `${items.length} ide konten berhasil dibuat &nbsp;${buildProviderBadge(provider)}&nbsp;· Pilih yang ingin disimpan`;
+    toast(`🧠 ${items.length} ide berhasil digenerate via ${m?.label||provider}!`,'ok');
 
   }catch(err){
     toast('Generate gagal: '+err.message,'warn');
@@ -4108,18 +4556,18 @@ Respond ONLY with a valid JSON array. No explanation. No markdown. Just the JSON
   }
 }
 
-function renderAIBankResults(items){
+function renderAIBankResults(items, provider){
   const wrap=document.getElementById('ai-bank-items');if(!wrap)return;
   const pl=getPL();
   const PLC_MAP={edu:'#1D9E75',hiburan:'#D4A800',prod:'#185FA5',inspirasi:'#6B21A8',bts:'#854F0B',promo:'#993C1D',testi:'#854F0B'};
   const OBJ_LABELS={awareness:'Awareness',engagement:'Engagement',conversion:'Conversion',sales:'Sales'};
+  const badge = buildProviderBadge(provider);
 
   wrap.innerHTML=items.map((item,i)=>{
     const color=PLC_MAP[item.cat]||'#7c3aed';
     const pillarName=pl[item.cat]||item.cat||'Konten';
     return `<div class="ai-bank-card selected" id="ai-bcard-${i}" onclick="toggleAIBankCard(${i})">
       <div class="ai-bank-card-header">
-        <!-- Checkbox -->
         <div id="ai-bcheck-${i}" style="width:18px;height:18px;border-radius:5px;background:#7c3aed;border:2px solid #7c3aed;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s">
           <svg viewBox="0 0 12 10" fill="none" style="width:10px;height:8px"><polyline points="1,5 4,8 11,1" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
         </div>
@@ -4130,6 +4578,7 @@ function renderAIBankResults(items){
             <span style="padding:2px 7px;background:${color}18;color:${color};border-radius:4px;font-size:10px;font-weight:700">${pillarName}</span>
             <span style="padding:2px 7px;background:var(--bg);color:var(--mu);border-radius:4px;font-size:10px">${item.format||'Feed Foto'}</span>
             ${item.objective?`<span style="padding:2px 7px;background:#eff6ff;color:#1d4ed8;border-radius:4px;font-size:10px">${OBJ_LABELS[item.objective]||item.objective}</span>`:''}
+            ${i===0&&badge?badge:''}
           </div>
         </div>
         <button onclick="event.stopPropagation();saveSingleBankItem(${i})" style="padding:5px 12px;background:var(--g);color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);white-space:nowrap;flex-shrink:0;transition:all .15s">💾 Simpan</button>
@@ -4178,7 +4627,6 @@ function saveSingleBankItem(idx){
     hook:item.hook||'',used:'ide'
   });
   persist();renderBank();renderDashboard();
-  // Visual feedback on card
   const card=document.getElementById('ai-bcard-'+idx);
   if(card){
     card.style.opacity='.5';
@@ -4211,32 +4659,44 @@ function saveAllBankItems(){
   toast(`🎉 ${saved} ide konten berhasil disimpan ke Bank Konten!`,'ok');
 }
 
-// ══════════════════════════════════════
-// AI CAPTION GENERATOR
-// ══════════════════════════════════════
-const TONE_LABELS={
-  friendly:'Friendly & Hangat — gunakan sapaan akrab, kata-kata yang dekat dan personal',
-  professional:'Profesional — bahasa formal tapi tidak kaku, terpercaya',
-  playful:'Playful & Fun — energik, ringan, bisa pakai wordplay atau humor',
-  inspirational:'Inspiratif & Motivasi — menyentuh, penuh semangat, emotionally resonant',
-  educational:'Edukatif — informatif, clear, step-by-step, berikan value nyata',
-  urgent:'Urgensi/Promo — FOMO, time-limited, direct call to action',
-  storytelling:'Storytelling — awali dengan cerita/skenario, bangun koneksi emosional'
-};
+// ── openAIBankGenerator ─────────────────────────────────────────────
+function openAIBankGenerator(){
+  const a=getAct();if(!a){toast('Pilih akun terlebih dahulu','warn');return;}
+  const brandCtx=[];
+  const brandName=a.name||'';const platform=a.platform||'Instagram';
+  if(brandName)brandCtx.push(`Brand: ${brandName}`);
+  if(platform)brandCtx.push(`Platform: ${platform}`);
+  const fields=a.data.fields||{};
+  if(fields.brand_desc)brandCtx.push(`Deskripsi: ${fields.brand_desc}`);
+  if(fields.target)brandCtx.push(`Target: ${fields.target}`);
+  if(fields.usp)brandCtx.push(`USP: ${fields.usp}`);
+  if(fields.tov)brandCtx.push(`Tone: ${fields.tov}`);
+  const ctxWrap=document.getElementById('ai-bank-brand-ctx');
+  const ctxPrev=document.getElementById('ai-bank-brand-preview');
+  if(brandCtx.length>0&&ctxPrev){
+    ctxPrev.innerHTML=brandCtx.join('<br>');
+    if(ctxWrap)ctxWrap.style.display='block';
+  }
+  document.getElementById('ai-bank-prompt').value='';
+  document.getElementById('ai-bank-step1').style.display='block';
+  document.getElementById('ai-bank-results').style.display='none';
+  _aiBankResults=[];
+  document.getElementById('mo-ai-bank').classList.add('open');
+  setTimeout(()=>document.getElementById('ai-bank-prompt')?.focus(),200);
+}
 
-const LENGTH_GUIDE={
-  short:'1-3 kalimat saja, langsung ke poin utama',
-  medium:'1 paragraf singkat (4-6 kalimat)',
-  long:'2-3 paragraf dengan hook, isi, dan CTA yang jelas'
-};
+function setAIBankPrompt(text){
+  const el=document.getElementById('ai-bank-prompt');
+  if(el){el.value=text;el.focus();}
+}
 
-const PL_LABELS={
-  edu:'Edukasi',hiburan:'Hiburan',prod:'Produk',
-  inspirasi:'Inspirasi',bts:'Behind the Scene',promo:'Promo & CTA',testi:'Testimoni'
-};
+function backToAIBankPrompt(){
+  document.getElementById('ai-bank-step1').style.display='block';
+  document.getElementById('ai-bank-results').style.display='none';
+}
 
+// ── openAICaptionPanel ──────────────────────────────────────────────
 function openAICaptionPanel(){
-  // Pull current values from calendar modal
   const title=document.getElementById('cd_title')?.value||'';
   const brief=document.getElementById('cd_brief')?.value||'';
   const keymsg=document.getElementById('cd_keymsg')?.value||'';
@@ -4244,8 +4704,6 @@ function openAICaptionPanel(){
   const format=document.getElementById('cd_format')?.value||'Feed Foto';
   const objective=document.getElementById('cd_objective')?.value||'';
   const platform=getAct()?.platform||'Instagram';
-
-  // Preview input
   const preview=[];
   if(title)preview.push(`📌 Judul: ${title}`);
   if(brief)preview.push(`📝 Brief: ${brief}`);
@@ -4260,13 +4718,26 @@ function openAICaptionPanel(){
   document.getElementById('mo-ai-caption').classList.add('open');
 }
 
+function useCaption(idx){
+  const el=document.getElementById('ai-var-'+idx);
+  if(!el)return;
+  const text=el.getAttribute('data-text')||el.textContent;
+  const captionField=document.getElementById('cd_caption');
+  if(captionField){captionField.value=text;captionField.focus();}
+  closeMo();
+  document.getElementById('mo-cal').classList.add('open');
+  toast('Caption berhasil dipasang ✅','ok');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PATCH generateCaption() — use aiCall with failover
+// ══════════════════════════════════════════════════════════════════
 async function generateCaption(){
   const btn=document.getElementById('ai-gen-btn');
   const label=document.getElementById('ai-gen-label');
   const resultsWrap=document.getElementById('ai-results');
   const variantsWrap=document.getElementById('ai-variants');
 
-  // Get inputs
   const title=document.getElementById('cd_title')?.value||'';
   const brief=document.getElementById('cd_brief')?.value||'';
   const keymsg=document.getElementById('cd_keymsg')?.value||'';
@@ -4282,13 +4753,12 @@ async function generateCaption(){
   const incHashtag=document.getElementById('ai-inc-hashtag')?.checked;
   const custom=document.getElementById('ai-custom')?.value.trim()||'';
 
-  // Loading state
   btn.disabled=true;
   label.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;animation:spin .8s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Generating...';
   resultsWrap.style.display='block';
   variantsWrap.innerHTML=`<div style="text-align:center;padding:20px;color:var(--mu)">
     <div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">✨</div>
-    <div style="font-size:13px">Claude sedang menulis caption...</div>
+    <div style="font-size:13px">AI sedang menulis caption...</div>
   </div>`;
 
   const prompt=`Kamu adalah copywriter profesional media sosial Indonesia yang berpengalaman.
@@ -4320,28 +4790,19 @@ Tulis tepat 3 variasi, masing-masing diawali "VARIASI 1:", "VARIASI 2:", "VARIAS
 Setiap variasi harus berbeda pendekatan/angle-nya. Langsung tulis captionnya tanpa penjelasan tambahan.`;
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'';
+    const {text, provider} = await aiCall(prompt, {maxTokens:1500});
 
     if(!text){throw new Error('Tidak ada respons dari AI');}
 
-    // Parse variants
     const rawVariants=text.split(/VARIASI \d+:/i).filter(v=>v.trim());
     const variants=rawVariants.map(v=>v.replace(/^[\n\s]+|---[\s\S]*$|\s+$/g,'').trim()).filter(v=>v.length>10);
 
     if(!variants.length){throw new Error('Format respons tidak sesuai');}
 
-    variantsWrap.innerHTML=variants.map((v,i)=>`
-      <div style="border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden;transition:border-color .15s" onmouseover="this.style.borderColor='var(--pu)'" onmouseout="this.style.borderColor='var(--bdr)'">
+    const badge = buildProviderBadge(provider);
+    variantsWrap.innerHTML=`<div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mu)">Digenerate oleh ${badge}</div>`
+      +variants.map((v,i)=>`
+      <div style="border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden;transition:border-color .15s;margin-bottom:8px" onmouseover="this.style.borderColor='var(--pu)'" onmouseout="this.style.borderColor='var(--bdr)'">
         <div style="padding:8px 12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr)">
           <div style="font-size:11px;font-weight:700;color:var(--pu)">Variasi ${i+1}</div>
           <button onclick="useCaption(${i})" style="padding:5px 14px;background:var(--pu);color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);transition:all .15s" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='var(--pu)'">
@@ -4351,12 +4812,14 @@ Setiap variasi harus berbeda pendekatan/angle-nya. Langsung tulis captionnya tan
         <div id="ai-var-${i}" data-text="${escAttr(v)}" style="padding:12px;font-size:13px;line-height:1.7;color:var(--tx2);white-space:pre-wrap;max-height:200px;overflow-y:auto;cursor:text">${escHtml(v)}</div>
       </div>`).join('');
 
-    toast(`✨ ${variants.length} variasi caption berhasil digenerate!`,'ok');
+    const m=AI_PROVIDER_META[provider];
+    toast(`✨ ${variants.length} variasi caption via ${m?.label||provider}!`,'ok');
   }catch(err){
     variantsWrap.innerHTML=`<div style="text-align:center;padding:20px;color:var(--co)">
       <div style="font-size:20px;margin-bottom:8px">⚠️</div>
       <div style="font-size:13px;font-weight:600">Gagal generate</div>
       <div style="font-size:12px;color:var(--mu);margin-top:4px">${err.message}</div>
+      <button onclick="openAISettings()" style="margin-top:10px;padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn)">⚙️ Buka Pengaturan AI</button>
     </div>`;
     toast('Generate gagal: '+err.message,'warn');
   }finally{
@@ -4365,17 +4828,12 @@ Setiap variasi harus berbeda pendekatan/angle-nya. Langsung tulis captionnya tan
   }
 }
 
-function useCaption(idx){
-  const el=document.getElementById('ai-var-'+idx);
-  if(!el)return;
-  const text=el.getAttribute('data-text')||el.textContent;
-  const captionField=document.getElementById('cd_caption');
-  if(captionField){captionField.value=text;captionField.focus();}
-  closeMo();
-  // Reopen calendar modal
-  document.getElementById('mo-cal').classList.add('open');
-  toast('Caption berhasil dipasang ✅','ok');
-}
+// ── Init on load ───────────────────────────────────────────────────
+(function initMultiAI(){
+  loadAIConfig();
+  refreshAIStatusPill();
+})();
+// ══════════════════════════════════════════════════════════════════
 
 function escAttr(str){if(!str)return '';return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
