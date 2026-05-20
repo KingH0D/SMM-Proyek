@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SMM Toolkit</title>
+<title>SMM Toolkit v5.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -2252,7 +2252,7 @@ function showPage(id,el){
   if(id==='kompetitor')renderComp(true);
   if(id==='bank'){renderBank();refreshAllPillarSelects();}
   if(id==='contentlist')renderCL();
-  if(id==='dashboard')renderDashboard();
+  if(id==='dashboard'){renderDashboard();document.getElementById('acct-nav').style.display='none';}
   if(id==='kpi')renderKPI();
   if(id==='reminders')renderReminders();
   if(id==='pillar')loadPillarNamesToPage();
